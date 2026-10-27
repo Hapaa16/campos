@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   // caching would mean annotating every page as uncacheable anyway, while
   // risking a cached fragment leaking across tenants.
   cacheComponents: false,
+  // The floating dev badge sits on top of the sidebar's user menu.
+  devIndicators: false,
   turbopack: {
     rules: {
       "*.css": { loaders: ["@tailwindcss/turbopack"], as: "*.css" },

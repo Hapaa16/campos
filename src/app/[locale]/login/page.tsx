@@ -14,6 +14,10 @@ export default async function LoginPage({
   setRequestLocale(locale);
   const { next } = await searchParams;
   const t = await getTranslations("auth");
+  const pillars = (await getTranslations("auth")).raw("pillars") as {
+    term: string;
+    desc: string;
+  }[];
 
   // Dev convenience: one login per role, so the permission differences are
   // inspectable in seconds rather than by hand-editing memberships.
@@ -50,22 +54,16 @@ export default async function LoginPage({
         <div className="max-w-md">
           <h2 className="text-2xl font-semibold tracking-tight text-text">{t("signInSubtitle")}</h2>
           <dl className="mt-8 space-y-4">
-            {[
-              ["Төлөвлөсөн ≠ Бодит", "Захиалга, ээлж, ирц тус бүр өөрийн бүртгэлтэй."],
-              ["Эрх нь өгөгдлийн хажууд", "Шалгалт сервер дээр, мөр бүрийн түвшинд."],
-              ["Нэг түрээслэгч, нэг хил", "Байгууллага хооронд өгөгдөл огтлолцохгүй."],
-            ].map(([term, desc]) => (
-              <div key={term} className="border-l-2 border-accent-line pl-3">
-                <dt className="text-sm font-medium text-text">{term}</dt>
-                <dd className="mt-0.5 text-sm text-text-3">{desc}</dd>
+            {pillars.map((pillar) => (
+              <div key={pillar.term} className="border-l-2 border-accent-line pl-3">
+                <dt className="text-sm font-medium text-text">{pillar.term}</dt>
+                <dd className="mt-0.5 text-sm text-text-3">{pillar.desc}</dd>
               </div>
             ))}
           </dl>
         </div>
 
-        <p className="text-2xs text-text-3">
-          Phase 1–3 · Ажиллах хүч, бүтэц, ээлж, кэмп
-        </p>
+        <p className="text-2xs text-text-3">{t("phaseNote")}</p>
       </aside>
 
       <main className="flex items-center justify-center p-6">

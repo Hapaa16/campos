@@ -67,7 +67,22 @@
     "demoAccounts": "Demo accounts",
     "demoHint": "Pick one to see how the interface changes per role. Password: demo",
     "switchOrganization": "Switch organization",
-    "noAccess": "You do not have access to this organization."
+    "noAccess": "You do not have access to this organization.",
+    "pillars": [
+      {
+        "term": "Planned ≠ Actual",
+        "desc": "A booking, a shift and an attendance are three separate records."
+      },
+      {
+        "term": "Authorization beside the data",
+        "desc": "Checks run on the server, at row level."
+      },
+      {
+        "term": "One tenant, one boundary",
+        "desc": "No organization can reach another's data."
+      }
+    ],
+    "phaseNote": "Phase 1–3 · Workforce, structure, rosters, camps"
   },
   "errors": {
     "forbiddenTitle": "Not permitted",
@@ -111,7 +126,8 @@
     "occupancyByCamp": "Occupancy by camp",
     "upcomingDepartures": "Upcoming departures",
     "noWidgets": "No dashboard panels match your permissions.",
-    "asOf": "as of {time}"
+    "asOf": "as of {time}",
+    "activeHeadcount": "Active headcount"
   },
   "workforce": {
     "title": "Workforce",

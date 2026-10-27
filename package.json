@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "check": "pnpm typecheck && pnpm check:i18n && pnpm test"
   },
   "dependencies": {
     "@casl/ability": "^7.0.2",
