@@ -157,7 +157,17 @@
     "typeContractor": "Contractor",
     "typeSubcontractor": "Subcontractor",
     "empty": "No employees found",
-    "emptyHint": "Adjust your filters, or add a new employee record."
+    "emptyHint": "Adjust your filters, or add a new employee record.",
+    "nationalId": "National ID",
+    "passportNo": "Passport",
+    "dateOfBirth": "Date of birth",
+    "personalPhone": "Personal phone",
+    "personalEmail": "Personal email",
+    "homeAddress": "Home address",
+    "workEmail": "Work email",
+    "workPhone": "Work phone",
+    "relation": "Relationship",
+    "directReports": "Direct reports"
   },
   "org": {
     "title": "Organization chart",
@@ -178,7 +188,23 @@
     "collapseAll": "Collapse all",
     "searchUnit": "Find a unit…",
     "noSelection": "Select a unit",
-    "noSelectionHint": "Pick a unit on the chart to see its detail."
+    "noSelectionHint": "Pick a unit on the chart to see its detail.",
+    "historyTitle": "Published history",
+    "historyNote": "Published roster rows record what was true when they were published and are left UNCHANGED. Only current state is rewritten.",
+    "historyRows": "rows reference the old paths",
+    "pathChanges": "Path changes",
+    "reasonPlaceholder": "e.g. Mining division restructure, November 2026",
+    "reasonNote": "The reason is stored in the audit log alongside the actor and timestamp.",
+    "members": "Members",
+    "externalReports": "Reports outside this unit",
+    "externalReportsNote": "These people's supervisors sit in a different unit.",
+    "dragHint": "Drag a unit onto another to move it. Changes are previewed first.",
+    "fitView": "Fit",
+    "showReporting": "Reporting lines",
+    "direct": "Direct",
+    "subtree": "Subtree (Σ)",
+    "noDirectMembers": "No one assigned directly here",
+    "noDirectMembersHint": "This unit's people sit in the units beneath it."
   },
   "roster": {
     "title": "Rosters",

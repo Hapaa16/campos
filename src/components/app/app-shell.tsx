@@ -82,7 +82,10 @@ export function AppShell({
               actions={header.actions}
               onOpenPalette={() => palette.setOpen(true)}
             />
-            <main className="min-h-0 flex-1 overflow-auto">{children}</main>
+            {/* A flex column, so a page can own the remaining height with
+                flex-1 (canvases and virtualized tables need a definite one)
+                and manage its own scrolling. */}
+            <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</main>
           </div>
         </div>
 
