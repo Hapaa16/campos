@@ -1,0 +1,154 @@
+/* ===========================================================================
+   CampOS design tokens
+   ---------------------------------------------------------------------------
+   Direction: "quiet chrome, high density" (Linear / Vercel / Stripe lineage).
+     - Hierarchy comes from type weight + spacing, never from decoration.
+     - Hairline borders carry structure in dark; shadow is a light-theme tool.
+     - COLOUR MEANS STATE. If something is coloured and is not communicating
+       a status, that is a bug.
+     - Exactly one accent. It marks selection, focus and primary action.
+
+   Dark is the base palette on :root. System preference and the explicit
+   [data-theme] override both resolve on top of it, so system / forced-dark /
+   forced-light all render correctly.
+   ========================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* -- surfaces ---------------------------------------------------------- */
+  --canvas:      oklch(0.145 0.003 286);   /* #0A0A0B  page ground          */
+  --surface:     oklch(0.182 0.004 286);   /* #111113  cards, panels        */
+  --surface-2:   oklch(0.212 0.005 286);   /* #17171A  popovers, menus      */
+  --surface-3:   oklch(0.248 0.006 286);   /*          hover / active row   */
+  --surface-inset:oklch(0.128 0.003 286);  /*          wells, code, inputs  */
+
+  /* -- lines ------------------------------------------------------------- */
+  --line:        oklch(0.272 0.006 286);   /* #232327  hairline             */
+  --line-soft:   oklch(0.228 0.005 286);   /*          grid interior rules  */
+  --line-strong: oklch(0.352 0.008 286);   /*          emphasised divider   */
+
+  /* -- text -------------------------------------------------------------- */
+  --text:        oklch(0.967 0.003 286);   /*          primary              */
+  --text-2:      oklch(0.726 0.007 286);   /*          secondary / labels   */
+  --text-3:      oklch(0.566 0.009 286);   /*          tertiary / hints     */
+  --text-on-accent: oklch(0.985 0.002 286);
+
+  /* -- accent (ONE) ------------------------------------------------------ */
+  --accent:      oklch(0.620 0.170 255);
+  --accent-hover:oklch(0.670 0.172 255);
+  --accent-soft: oklch(0.620 0.170 255 / 0.14);
+  --accent-line: oklch(0.620 0.170 255 / 0.42);
+
+  /* -- status (reserved vocabulary) -------------------------------------- */
+  --ok:        oklch(0.722 0.164 152);  --ok-soft:     oklch(0.722 0.164 152 / 0.15);
+  --warn:      oklch(0.806 0.150 082);  --warn-soft:   oklch(0.806 0.150 082 / 0.15);
+  --danger:    oklch(0.648 0.212 024);  --danger-soft: oklch(0.648 0.212 024 / 0.16);
+  --plan:      oklch(0.680 0.135 242);  --plan-soft:   oklch(0.680 0.135 242 / 0.15);
+  --neutral:   oklch(0.600 0.008 286);  --neutral-soft:oklch(0.600 0.008 286 / 0.16);
+
+  /* -- shadow: dark leans on borders, not elevation ---------------------- */
+  --shadow-raised: none;
+  --shadow-overlay: 0 8px 28px -6px oklch(0 0 0 / 0.7), 0 0 0 1px var(--line);
+
+  /* -- focus ------------------------------------------------------------- */
+  --ring: var(--accent);
+}
+
+/* System light, when the user has made no explicit choice ----------------- */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+
+    --canvas:       oklch(1 0 0);
+    --surface:      oklch(0.991 0.001 286);
+    --surface-2:    oklch(1 0 0);
+    --surface-3:    oklch(0.967 0.002 286);
+    --surface-inset:oklch(0.978 0.002 286);
+
+    --line:         oklch(0.916 0.003 286);
+    --line-soft:    oklch(0.945 0.002 286);
+    --line-strong:  oklch(0.855 0.004 286);
+
+    --text:         oklch(0.205 0.006 286);
+    --text-2:       oklch(0.448 0.009 286);
+    --text-3:       oklch(0.595 0.010 286);
+
+    --accent:       oklch(0.545 0.182 258);
+    --accent-hover: oklch(0.492 0.186 258);
+    --accent-soft:  oklch(0.545 0.182 258 / 0.10);
+    --accent-line:  oklch(0.545 0.182 258 / 0.38);
+
+    --ok:     oklch(0.560 0.140 152); --ok-soft:     oklch(0.560 0.140 152 / 0.12);
+    --warn:   oklch(0.638 0.148 062); --warn-soft:   oklch(0.638 0.148 062 / 0.14);
+    --danger: oklch(0.556 0.212 026); --danger-soft: oklch(0.556 0.212 026 / 0.11);
+    --plan:   oklch(0.560 0.140 244); --plan-soft:   oklch(0.560 0.140 244 / 0.11);
+    --neutral:oklch(0.520 0.010 286); --neutral-soft:oklch(0.520 0.010 286 / 0.10);
+
+    --shadow-raised:  0 1px 2px oklch(0.2 0.01 286 / 0.05);
+    --shadow-overlay: 0 10px 32px -8px oklch(0.2 0.01 286 / 0.18), 0 0 0 1px var(--line);
+  }
+}
+
+/* Explicit light — must repeat so the toggle wins in both directions ------ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --canvas:       oklch(1 0 0);
+  --surface:      oklch(0.991 0.001 286);
+  --surface-2:    oklch(1 0 0);
+  --surface-3:    oklch(0.967 0.002 286);
+  --surface-inset:oklch(0.978 0.002 286);
+
+  --line:         oklch(0.916 0.003 286);
+  --line-soft:    oklch(0.945 0.002 286);
+  --line-strong:  oklch(0.855 0.004 286);
+
+  --text:         oklch(0.205 0.006 286);
+  --text-2:       oklch(0.448 0.009 286);
+  --text-3:       oklch(0.595 0.010 286);
+
+  --accent:       oklch(0.545 0.182 258);
+  --accent-hover: oklch(0.492 0.186 258);
+  --accent-soft:  oklch(0.545 0.182 258 / 0.10);
+  --accent-line:  oklch(0.545 0.182 258 / 0.38);
+
+  --ok:     oklch(0.560 0.140 152); --ok-soft:     oklch(0.560 0.140 152 / 0.12);
+  --warn:   oklch(0.638 0.148 062); --warn-soft:   oklch(0.638 0.148 062 / 0.14);
+  --danger: oklch(0.556 0.212 026); --danger-soft: oklch(0.556 0.212 026 / 0.11);
+  --plan:   oklch(0.560 0.140 244); --plan-soft:   oklch(0.560 0.140 244 / 0.11);
+  --neutral:oklch(0.520 0.010 286); --neutral-soft:oklch(0.520 0.010 286 / 0.10);
+
+  --shadow-raised:  0 1px 2px oklch(0.2 0.01 286 / 0.05);
+  --shadow-overlay: 0 10px 32px -8px oklch(0.2 0.01 286 / 0.18), 0 0 0 1px var(--line);
+}
+
+/* ===========================================================================
+   Density — a first-class user setting, not a style tweak.
+   Ops users live in `dense`; `comfortable` exists for occasional/admin users.
+   ========================================================================= */
+:root,
+:root[data-density="comfortable"] {
+  --row-h: 44px;
+  --control-h: 36px;
+  --control-h-sm: 30px;
+  --cell-px: 12px;
+  --section-gap: 24px;
+  --ui-size: 13px;
+}
+:root[data-density="compact"] {
+  --row-h: 36px;
+  --control-h: 32px;
+  --control-h-sm: 26px;
+  --cell-px: 10px;
+  --section-gap: 18px;
+  --ui-size: 13px;
+}
+:root[data-density="dense"] {
+  --row-h: 28px;
+  --control-h: 28px;
+  --control-h-sm: 22px;
+  --cell-px: 8px;
+  --section-gap: 12px;
+  --ui-size: 12px;
+}

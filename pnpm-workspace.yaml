@@ -1,3 +1,11 @@
+packages:
+  - "."
+verifyDepsBeforeRun: false
+# Native speed-ups pulled in by next/vitest. Nothing here depends on their
+# postinstall scripts, so they stay unbuilt deliberately.
+ignoredBuiltDependencies:
+  - "@parcel/watcher"
+  - "@swc/core"
 allowBuilds:
-  sharp: false
-  unrs-resolver: false
+  '@parcel/watcher': set this to true or false
+  '@swc/core': set this to true or false
