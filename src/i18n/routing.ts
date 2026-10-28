@@ -12,4 +12,13 @@ export const routing = defineRouting({
   localeDetection: false,
 });
 
+/**
+ * All formatting happens in the site's zone, not the viewer's.
+ *
+ * It must be passed explicitly to the client provider: without it the server
+ * formats in Ulaanbaatar and the browser formats in whatever zone the user's
+ * machine is set to, which is a hydration mismatch on every date on the page.
+ */
+export const APP_TIME_ZONE = "Asia/Ulaanbaatar";
+
 export type Locale = (typeof routing.locales)[number];

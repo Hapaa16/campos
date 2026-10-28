@@ -1,11 +1,12 @@
 "use client";
 
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { ShieldAlert } from "lucide-react";
 import type { Column, ColumnMeta } from "@/components/data/data-table";
 import { StatusChip, type StatusTone } from "@/components/ui/status-chip";
 import { Avatar } from "@/components/ui/misc";
 import { Tooltip } from "@/components/ui/tooltip";
+import { formatDate } from "@/lib/format";
 import type { Employee, EmploymentStatus, EmploymentType } from "@/server/db/schema";
 
 export type EmployeeRow = Partial<Employee> & { id: string };
@@ -39,7 +40,6 @@ export function useEmployeeColumns({
 }): Column<EmployeeRow>[] {
   const t = useTranslations("workforce");
   const tc = useTranslations("common");
-  const format = useFormatter();
   const today = new Date().toISOString().slice(0, 10);
 
   const meta = (m: ColumnMeta) => m;
@@ -146,9 +146,7 @@ export function useEmployeeColumns({
       meta: meta({ sortKey: "hired", width: 96, numeric: true, align: "right", defaultHidden: true }),
       cell: ({ row }) => {
         const value = (row.original as EmployeeRow).hiredAt;
-        return value ? (
-          <span className="text-text-3">{format.dateTime(new Date(value), { dateStyle: "short" })}</span>
-        ) : null;
+        return value ? <span className="text-text-3">{formatDate(value)}</span> : null;
       },
     },
   ];

@@ -6,8 +6,14 @@ import {
   type MongoQuery,
 } from "@casl/ability";
 import { permittedFieldsOf } from "@casl/ability/extra";
-import { ROLE_BY_ID } from "./roles";
-import type { Action, AuthContext, PermissionTuple, Subject } from "./types";
+import { ROLE_DEFINITIONS } from "./roles";
+import type {
+  Action,
+  AuthContext,
+  PermissionTuple,
+  RoleDefinition,
+  Subject,
+} from "./types";
 
 export type AppAbility = MongoAbility<[Action, Subject | Record<string, unknown>], MongoQuery>;
 
@@ -82,12 +88,21 @@ function hydrate(node: unknown, ctx: AuthContext): unknown {
    Ability construction
    --------------------------------------------------------------------------- */
 
-export function buildAbility(ctx: AuthContext): AppAbility {
+/**
+ * @param roles The role catalogue to resolve against. Defaults to the seeded
+ *   definitions; the server passes the stored catalogue so an edit in
+ *   Settings → Roles takes effect without a deploy.
+ */
+export function buildAbility(
+  ctx: AuthContext,
+  roles: readonly RoleDefinition[] = ROLE_DEFINITIONS,
+): AppAbility {
   const builder = new AbilityBuilder<AppAbility>(createMongoAbility);
   const { can, cannot, build } = builder;
+  const byId = new Map(roles.map((r) => [r.id, r]));
 
   for (const roleId of ctx.roleIds) {
-    const role = ROLE_BY_ID.get(roleId);
+    const role = byId.get(roleId);
     if (!role) continue;
 
     // A platform role on a user who is not a platform admin is inert. This

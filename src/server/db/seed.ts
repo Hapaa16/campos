@@ -10,6 +10,8 @@ import {
   SURNAMES,
 } from "./names";
 import { generateRotationDays, isShift, isTravel, resolveShiftWindow } from "@/lib/roster/rotation";
+import { ROLE_DEFINITIONS } from "@/lib/authz/roles";
+import type { RoleDefinition } from "@/lib/authz/types";
 import type {
   AccommodationBooking,
   AuditLog,
@@ -35,6 +37,13 @@ import type {
 } from "./schema";
 
 export interface Database {
+  /**
+   * Editable copy of the seeded roles.
+   *
+   * Roles are data, so they live in the store rather than in code — editing
+   * one in Settings must not require a deploy.
+   */
+  roles: RoleDefinition[];
   organizations: Organization[];
   sites: Site[];
   orgUnitTypes: OrgUnitType[];
@@ -211,6 +220,9 @@ export function buildSeed(): Database {
   const today = startOfDay(new Date());
 
   const db: Database = {
+    // Deep-cloned so an edit at runtime cannot mutate the seeded constants
+    // that the tests and the ability builder's default fall back to.
+    roles: structuredClone(ROLE_DEFINITIONS),
     organizations: [],
     sites: [],
     orgUnitTypes: [],

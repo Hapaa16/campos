@@ -5,6 +5,7 @@ import type { Action, Subject } from "./types";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors";
 import { canOn, canType } from "./ability";
 import { getAuthContext } from "@/server/auth/session";
+import { db } from "@/server/db/store";
 import type { DataContext } from "@/server/db/query";
 
 /* ===========================================================================
@@ -21,7 +22,9 @@ import type { DataContext } from "@/server/db/query";
 export const getContext = cache(async (): Promise<DataContext | null> => {
   const auth = await getAuthContext();
   if (!auth) return null;
-  return { auth, ability: buildAbility(auth) };
+  // Resolve against the stored catalogue, so a permission edited in Settings
+  // applies on the next request rather than at the next deploy.
+  return { auth, ability: buildAbility(auth, db().roles) };
 });
 
 export async function requireContext(): Promise<DataContext> {

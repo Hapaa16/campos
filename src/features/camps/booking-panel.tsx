@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { LogIn, LogOut, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusChip, type StatusTone } from "@/components/ui/status-chip";
@@ -9,6 +9,7 @@ import { Input, Label } from "@/components/ui/input";
 import { checkInAction, checkOutAction, cancelBookingAction } from "@/server/actions/camps";
 import type { BedBookingView, BedSlot } from "@/server/services/camps";
 import { statusKey } from "./bed-timeline";
+import { formatDateRange, formatDateTime } from "@/lib/format";
 
 const TONE: Record<BedBookingView["status"], StatusTone> = {
   reserved: "plan",
@@ -35,7 +36,6 @@ export function BookingPanel({
 }) {
   const t = useTranslations("camp");
   const tc = useTranslations("common");
-  const format = useFormatter();
   const [pending, startTransition] = React.useTransition();
   const [cancelling, setCancelling] = React.useState(false);
   const [reason, setReason] = React.useState("");
@@ -79,17 +79,11 @@ export function BookingPanel({
       </div>
 
       <dl className="divide-y divide-line-soft px-4 py-2">
-        {field(
-          t("stay"),
-          `${format.dateTime(new Date(booking.startAt), { dateStyle: "medium" })} → ${format.dateTime(
-            new Date(booking.endAt),
-            { dateStyle: "medium" },
-          )}`,
-        )}
+        {field(t("stay"), formatDateRange(booking.startAt, booking.endAt))}
         {field(
           t("checkedIn"),
           booking.checkedInAt ? (
-            format.dateTime(new Date(booking.checkedInAt), { dateStyle: "medium", timeStyle: "short" })
+            formatDateTime(booking.checkedInAt)
           ) : (
             // Says so explicitly: a reservation whose window has started is
             // still not an arrival.
@@ -98,9 +92,7 @@ export function BookingPanel({
         )}
         {field(
           t("checkedOut"),
-          booking.checkedOutAt
-            ? format.dateTime(new Date(booking.checkedOutAt), { dateStyle: "medium", timeStyle: "short" })
-            : null,
+          booking.checkedOutAt ? formatDateTime(booking.checkedOutAt) : null,
         )}
       </dl>
 

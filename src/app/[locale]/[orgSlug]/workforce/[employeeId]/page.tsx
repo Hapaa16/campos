@@ -1,4 +1,4 @@
-import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowLeft, EyeOff, ShieldAlert, ShieldCheck } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { requireContext } from "@/lib/authz/guard";
@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/misc";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { formatDate } from "@/lib/format";
 import type { EmploymentStatus } from "@/server/db/schema";
 
 const STATUS_TONE: Record<EmploymentStatus, StatusTone> = {
@@ -40,7 +41,6 @@ export default async function EmployeeDetailPage({
 
   const t = await getTranslations("workforce");
   const tc = await getTranslations("common");
-  const format = await getFormatter();
 
   const field = (label: string, value: React.ReactNode) => (
     <div key={label} className="flex min-w-0 gap-3 py-1.5">
@@ -107,7 +107,7 @@ export default async function EmployeeDetailPage({
               {field(t("supervisor"), detail.supervisorName)}
               {field(
                 t("hiredAt"),
-                e.hiredAt ? format.dateTime(new Date(e.hiredAt), { dateStyle: "long" }) : null,
+                e.hiredAt ? formatDate(e.hiredAt) : null,
               )}
               {field(t("workEmail"), e.workEmail)}
               {field(t("workPhone"), e.workPhone)}
@@ -144,7 +144,7 @@ export default async function EmployeeDetailPage({
                         </StatusChip>
                         {q.expiresAt && (
                           <span className="tnum mt-0.5 block text-2xs text-text-3">
-                            {format.dateTime(new Date(q.expiresAt), { dateStyle: "short" })}
+                            {formatDate(q.expiresAt)}
                           </span>
                         )}
                       </span>
@@ -167,7 +167,7 @@ export default async function EmployeeDetailPage({
                 {field(t("passportNo"), e.passportNo)}
                 {field(
                   t("dateOfBirth"),
-                  e.dateOfBirth ? format.dateTime(new Date(e.dateOfBirth), { dateStyle: "medium" }) : null,
+                  e.dateOfBirth ? formatDate(e.dateOfBirth) : null,
                 )}
                 {field(t("personalPhone"), e.personalPhone)}
                 {field(t("personalEmail"), e.personalEmail)}

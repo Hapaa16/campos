@@ -3,7 +3,7 @@ import { Inter, Geist_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
-import { routing } from "@/i18n/routing";
+import { APP_TIME_ZONE, routing } from "@/i18n/routing";
 import { AppProviders } from "@/components/app/providers";
 import "../globals.css";
 
@@ -53,7 +53,11 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body className={`${inter.variable} ${mono.variable} antialiased`}>
-        <NextIntlClientProvider>
+        {/* Locale and zone are passed explicitly: without them the client
+            formatter falls back to the browser's, so the server renders
+            "2026.09.28" and the browser renders "9/28/26" — a hydration
+            mismatch on every date in the app. */}
+        <NextIntlClientProvider locale={locale} timeZone={APP_TIME_ZONE}>
           <AppProviders>{children}</AppProviders>
         </NextIntlClientProvider>
       </body>

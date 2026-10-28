@@ -325,7 +325,9 @@
     "leaveRequest": "Leave request",
     "rosterPublication": "Roster publication",
     "empty": "Nothing waiting",
-    "emptyHint": "Every request has been decided."
+    "emptyHint": "Every request has been decided.",
+    "clashWarning": "Rostered onto {count} shifts in this window. Approving creates a roster conflict.",
+    "decisionAudited": "The decision, reason and timestamp are written to the audit log."
   },
   "settings": {
     "title": "Settings",
@@ -342,11 +344,42 @@
     "systemRole": "System role",
     "noPermission": "No permission",
     "inheritedDenied": "Denied",
-    "uiOnlyNote": "This screen visualises permissions; enforcement happens on the server."
+    "uiOnlyNote": "This screen visualises permissions; enforcement happens on the server.",
+    "subject": "Subject",
+    "rules": "Rules",
+    "rulesNote": "A permission is an (action, subject, scope) tuple. No code anywhere branches on a role name.",
+    "legendAllow": "Allowed",
+    "legendScoped": "Scoped",
+    "legendFields": "Field restricted",
+    "legendDeny": "Denied",
+    "scopedGrant": "Limited by scope",
+    "ruleRemoved": "Rule removed",
+    "sessionsInvalidated": "Users holding this role must sign in again."
   },
   "stub": {
     "comingSoon": "Not built yet",
     "body": "This module is still to come. Its permissions and navigation slot are already wired.",
-    "phase": "Planned phase: {phase}"
+    "phase": "Planned phase: {phase}",
+    "planned": "Planned capabilities"
+  },
+  "leave": {
+    "annual": "Annual leave",
+    "sick": "Sick leave",
+    "unpaid": "Unpaid leave",
+    "parental": "Parental leave",
+    "training": "Training",
+    "compassionate": "Compassionate"
+  },
+  "action": {
+    "create": "Create",
+    "read": "Read",
+    "update": "Update",
+    "delete": "Delete",
+    "approve": "Approve",
+    "publish": "Publish",
+    "export": "Export",
+    "checkin": "Check in",
+    "checkout": "Check out",
+    "assign": "Assign"
   }
 }
