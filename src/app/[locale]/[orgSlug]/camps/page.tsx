@@ -25,7 +25,7 @@ export default async function CampsPage({
   if (board.camps.length === 0) {
     return (
       <>
-        <PageHeader title={t("title")} />
+        <PageHeader pageKey="camps" title={t("title")} />
         <EmptyState className="flex-1" icon={Building2} title={t("noCampAccess")} />
       </>
     );
@@ -33,7 +33,7 @@ export default async function CampsPage({
 
   return (
     <>
-      <PageHeader title={t("title")} meta={`${board.camps.length}`} />
+      <PageHeader pageKey="camps" title={t("title")} meta={`${board.camps.length}`} />
 
       <div className="grid min-h-0 flex-1 gap-3 overflow-auto p-3 lg:grid-cols-2 xl:grid-cols-3">
         {board.camps.map((camp) => {

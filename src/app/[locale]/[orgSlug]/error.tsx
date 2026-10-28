@@ -27,7 +27,12 @@ export default function OrgError({
   const forbidden = error.message.includes("эрх") || error.name === "ForbiddenError";
 
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center">
+    // The marker is what automated checks assert on: the translated copy also
+    // ships in the i18n bundle on every page, so matching text is useless.
+    <div
+      data-boundary={forbidden ? "forbidden" : "error"}
+      className="flex min-h-0 flex-1 items-center justify-center"
+    >
       <EmptyState
         icon={forbidden ? ShieldAlert : TriangleAlert}
         title={forbidden ? t("forbiddenTitle") : t("genericTitle")}

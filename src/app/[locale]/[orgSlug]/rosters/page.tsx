@@ -30,7 +30,7 @@ export default async function RostersPage({
     const t = await getTranslations("roster");
     return (
       <>
-        <PageHeader title={t("title")} />
+        <PageHeader pageKey="rosters" title={t("title")} />
         <EmptyState className="flex-1" icon={CalendarRange} title={t("empty")} description={t("emptyHint")} />
       </>
     );

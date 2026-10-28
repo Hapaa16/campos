@@ -114,7 +114,7 @@ export default async function DashboardPage({
 
   return (
     <>
-      <PageHeader title={t("title")} />
+      <PageHeader pageKey="dashboard" title={t("title")} />
 
       <div className="min-h-0 flex-1 overflow-auto p-3">
         {tiles.length === 0 ? (

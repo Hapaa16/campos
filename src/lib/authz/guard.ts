@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { buildAbility } from "./ability";
 import type { Action, Subject } from "./types";
+import { forbidden, unauthorized } from "next/navigation";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors";
 import { canOn, canType } from "./ability";
 import { getAuthContext } from "@/server/auth/session";
@@ -34,20 +35,20 @@ export async function requireContext(): Promise<DataContext> {
 }
 
 /**
- * Assert a type-level permission — "may this actor publish rosters at all?".
+ * Page-entry guard — "may this actor open this screen at all?".
  *
- * Use for navigation and page entry. It CANNOT evaluate row conditions, so it
- * is never sufficient on its own for a mutation: pair it with requireOn().
+ * Calls Next's forbidden()/unauthorized() rather than throwing, so a denial
+ * renders server-side with a 403 and a real page. Throwing instead lands in
+ * the client error boundary, which answers 200 with nothing in the server
+ * HTML — indistinguishable from a working page to anything but a browser.
+ *
+ * It CANNOT evaluate row conditions, so it is never sufficient on its own for
+ * a mutation: pair it with requireOn().
  */
 export async function requireAbility(action: Action, subject: Subject): Promise<DataContext> {
-  const ctx = await requireContext();
-  if (!canType(ctx.ability, action, subject)) {
-    throw new ForbiddenError(
-      ctx.ability.relevantRuleFor(action, subject as never)?.reason ??
-        "Энэ хуудсыг нээх эрх байхгүй.",
-      { action, subject },
-    );
-  }
+  const ctx = await getContext();
+  if (!ctx) unauthorized();
+  if (!canType(ctx.ability, action, subject)) forbidden();
   return ctx;
 }
 

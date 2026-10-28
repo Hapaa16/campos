@@ -63,8 +63,7 @@ export default async function EmployeeDetailPage({
 
   return (
     <>
-      <PageHeader
-        title={e.displayName ?? "—"}
+      <PageHeader pageKey="employee-detail" title={e.displayName ?? "—"}
         meta={e.employeeCode}
         actions={
           <Button variant="ghost" size="sm" asChild>

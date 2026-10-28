@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 export default async function OrgNotFound() {
   const t = await getTranslations("errors");
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center">
+    <div data-boundary="not-found" className="flex min-h-0 flex-1 items-center justify-center">
       <EmptyState icon={FileQuestion} title={t("notFoundTitle")} description={t("notFoundBody")} />
     </div>
   );

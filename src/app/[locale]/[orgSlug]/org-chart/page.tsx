@@ -19,7 +19,7 @@ export default async function OrgChartPage({
 
   return (
     <>
-      <PageHeader title={t("title")} meta={`${tree.nodes.length}`} />
+      <PageHeader pageKey="org-chart" title={t("title")} meta={`${tree.nodes.length}`} />
       <OrgChartView tree={tree} orgSlug={orgSlug} loadDetail={loadUnitDetailAction} />
     </>
   );

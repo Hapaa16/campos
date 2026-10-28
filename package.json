@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check:i18n": "node scripts/check-i18n.mjs",
-    "check": "pnpm typecheck && pnpm check:i18n && pnpm test"
+    "check": "pnpm typecheck && pnpm lint && pnpm check:i18n && pnpm test",
+    "check:routes": "node scripts/route-sweep.mjs"
   },
   "dependencies": {
     "@casl/ability": "^7.0.2",

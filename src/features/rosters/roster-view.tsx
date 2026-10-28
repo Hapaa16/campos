@@ -158,8 +158,7 @@ export function RosterView({ data, orgSlug }: { data: RosterGridData; orgSlug: s
 
   return (
     <>
-      <PageHeader
-        title={t("title")}
+      <PageHeader pageKey="rosters" title={t("title")}
         meta={`${data.period.name} · ${data.period.startDate} → ${data.period.endDate}`}
         actions={
           <>

@@ -29,7 +29,7 @@ export function ApprovalsView({ data, orgSlug }: { data: ApprovalsData; orgSlug:
 
   return (
     <>
-      <PageHeader title={t("title")} meta={total > 0 ? String(total) : undefined} />
+      <PageHeader pageKey="approvals" title={t("title")} meta={total > 0 ? String(total) : undefined} />
 
       <div className="min-h-0 flex-1 overflow-auto p-3">
         {total === 0 ? (

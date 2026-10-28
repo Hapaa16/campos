@@ -60,7 +60,7 @@ export function AccommodationView({
   if (data.camps.length === 0) {
     return (
       <>
-        <PageHeader title={t("accommodationTitle")} />
+        <PageHeader pageKey="accommodation" title={t("accommodationTitle")} />
         <EmptyState className="flex-1" icon={Bed} title={t("noCampAccess")} />
       </>
     );
@@ -68,8 +68,7 @@ export function AccommodationView({
 
   return (
     <>
-      <PageHeader
-        title={t("accommodationTitle")}
+      <PageHeader pageKey="accommodation" title={t("accommodationTitle")}
         meta={summary ? `${summary.camp.name} · ${summary.siteName ?? ""}` : undefined}
       />
 

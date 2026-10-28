@@ -35,7 +35,7 @@ export function RolesView({
 
   return (
     <>
-      <PageHeader title={t("roles")} meta={t("rolesSubtitle")} />
+      <PageHeader pageKey="settings-roles" title={t("roles")} meta={t("rolesSubtitle")} />
 
       <div className="flex min-h-0 flex-1">
         {/* ---- role list ------------------------------------------------- */}

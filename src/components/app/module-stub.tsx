@@ -25,7 +25,7 @@ export async function ModuleStub({
 
   return (
     <>
-      <PageHeader title={t(titleKey)} meta={t("stub.comingSoon")} />
+      <PageHeader pageKey="stub" title={t(titleKey)} meta={t("stub.comingSoon")} />
 
       <div className="min-h-0 flex-1 overflow-auto p-3">
         <Panel className="mx-auto max-w-2xl">

@@ -53,7 +53,7 @@ export default async function WorkforcePage({
 
   return (
     <>
-      <PageHeader title={t("title")} meta={`${nf.format(result.total)}`} />
+      <PageHeader pageKey="workforce" title={t("title")} meta={`${nf.format(result.total)}`} />
       <WorkforceView
         rows={result.items as { id: string }[] as never}
         total={result.total}
