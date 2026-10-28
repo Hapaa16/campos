@@ -14,6 +14,8 @@ import { ROLE_DEFINITIONS } from "@/lib/authz/roles";
 import type { RoleDefinition } from "@/lib/authz/types";
 import type {
   AccommodationBooking,
+  AttendanceCorrection,
+  AttendanceEvent,
   AuditLog,
   Bed,
   Building,
@@ -61,6 +63,8 @@ export interface Database {
   rooms: Room[];
   beds: Bed[];
   accommodationBookings: AccommodationBooking[];
+  attendanceEvents: AttendanceEvent[];
+  attendanceCorrections: AttendanceCorrection[];
   users: User[];
   auditLogs: AuditLog[];
 }
@@ -240,15 +244,35 @@ export function buildSeed(): Database {
     rooms: [],
     beds: [],
     accommodationBookings: [],
+    attendanceEvents: [],
+    attendanceCorrections: [],
     users: [],
     auditLogs: [],
   };
 
   /* -- organizations ----------------------------------------------------- */
   db.organizations.push(
-    { id: ORG_A, name: "Оюу Толгой ХХК", slug: "oyu-tolgoi", timezone: TZ, defaultLocale: "mn", status: "active" },
+    {
+      id: ORG_A,
+      name: "Оюу Толгой ХХК",
+      slug: "oyu-tolgoi",
+      timezone: TZ,
+      defaultLocale: "mn",
+      status: "active",
+      attendanceGraceMinutes: 10,
+      earlyLeaveGraceMinutes: 10,
+    },
     // Exists so cross-tenant isolation is exercised by real data, not a mock.
-    { id: ORG_B, name: "Эрдэнэт Үйлдвэр ТӨҮГ", slug: "erdenet", timezone: TZ, defaultLocale: "mn", status: "active" },
+    {
+      id: ORG_B,
+      name: "Эрдэнэт Үйлдвэр ТӨҮГ",
+      slug: "erdenet",
+      timezone: TZ,
+      defaultLocale: "mn",
+      status: "active",
+      attendanceGraceMinutes: 15,
+      earlyLeaveGraceMinutes: 15,
+    },
   );
 
   /* -- sites ------------------------------------------------------------- */
@@ -751,6 +775,182 @@ export function buildSeed(): Database {
         note: null,
       });
     }
+  }
+
+  /* -- leave that lands on a rostered shift --------------------------------
+     Leave approved AFTER the roster was published is routine, and it is the
+     only way the "excused, not absent" path gets exercised. Without it the
+     roster and the leave register never disagree, which is not how a real
+     site behaves. */
+  const recentShifts = db.rosterAssignments.filter(
+    (a) => a.dayType === "shift" && a.date <= d(today) && a.date >= d(subDays(today, 10)),
+  );
+  for (let i = 0; i < 16 && recentShifts.length > 0; i++) {
+    const assignment = rng.pick(recentShifts);
+    const employee = db.employees.find((e) => e.id === assignment.employeeId);
+    if (!employee) continue;
+
+    const start = startOfDay(new Date(`${assignment.date}T00:00:00`));
+    db.leaveRequests.push({
+      id: `lr_${ORG_A}_late_${i}`,
+      organizationId: ORG_A,
+      employeeId: employee.id,
+      orgUnitPath: employee.orgUnitPath,
+      startAt: start.toISOString(),
+      endAt: addDays(start, rng.int(1, 3)).toISOString(),
+      leaveType: rng.pick(["sick", "compassionate", "annual"] as const),
+      status: "approved",
+      reason: rng.pick(["Эмнэлгийн магадлагаа", "Гэр бүлийн гачигдал", "Яаралтай хувийн шалтгаан"]),
+      // Requested and decided after the roster was already published.
+      requestedAt: subDays(start, 1).toISOString(),
+      decidedBy: "user_supervisor",
+      decidedAt: subDays(start, 1).toISOString(),
+      decisionReason: null,
+    });
+  }
+
+
+  /* -- attendance events --------------------------------------------------
+     Clock facts for the past two weeks, generated from the published roster.
+
+     Deliberately imperfect, because a clean dataset hides exactly the cases
+     the module exists for: late arrivals, missing clock-outs, absences, and
+     people who worked a shift nobody rostered them for. */
+  const todayStr = d(today);
+  const observedAssignments = db.rosterAssignments.filter(
+    (a) =>
+      a.dayType === "shift" &&
+      a.startAt !== null &&
+      a.endAt !== null &&
+      a.date <= todayStr &&
+      a.date >= d(subDays(today, 14)),
+  );
+
+  let eventSeq = 0;
+  const pushEvent = (
+    employeeId: string,
+    siteId: string,
+    eventType: AttendanceEvent["eventType"],
+    occurredAt: string,
+    source: AttendanceEvent["source"],
+  ) => {
+    db.attendanceEvents.push({
+      id: `ae_${ORG_A}_${eventSeq++}`,
+      organizationId: ORG_A,
+      employeeId,
+      siteId,
+      eventType,
+      occurredAt,
+      source,
+      deviceId: source === "terminal" ? `GATE-${rng.int(1, 4)}` : null,
+      recordedBy: source === "manual" ? "user_supervisor" : null,
+      attendanceRecordId: null,
+      idempotencyKey: null,
+    });
+  };
+
+  // People with approved leave over the shift produce no clock events — that
+  // absence of evidence is exactly what "excused" has to be derived from.
+  const onLeaveKeys = new Set(
+    db.leaveRequests
+      .filter((l) => l.status === "approved")
+      .flatMap((l) => {
+        const keys: string[] = [];
+        for (let i = 0; i < 14; i++) {
+          const day = d(addDays(new Date(l.startAt), i));
+          if (new Date(`${day}T00:00:00Z`) >= new Date(l.endAt)) break;
+          keys.push(`${l.employeeId}|${day}`);
+        }
+        return keys;
+      }),
+  );
+
+  for (const assignment of observedAssignments) {
+    if (onLeaveKeys.has(`${assignment.employeeId}|${assignment.date}`)) continue;
+
+    const outcome = rng.weighted([
+      ["on_time", 72],
+      ["late", 12],
+      ["no_clock_out", 6],
+      ["early_leave", 5],
+      ["absent", 5],
+    ] as const);
+
+    if (outcome === "absent") continue; // no events at all is what absence looks like
+
+    const plannedStart = Date.parse(assignment.startAt!);
+    const plannedEnd = Date.parse(assignment.endAt!);
+    const source = rng.weighted([["terminal", 80], ["biometric", 15], ["manual", 5]] as const) as
+      AttendanceEvent["source"];
+
+    const inOffset =
+      outcome === "late" ? rng.int(12, 95) * 60_000 : rng.int(-20, 8) * 60_000;
+    pushEvent(
+      assignment.employeeId,
+      assignment.siteId,
+      "clock_in",
+      new Date(plannedStart + inOffset).toISOString(),
+      source,
+    );
+
+    if (outcome === "no_clock_out") continue;
+
+    const outOffset =
+      outcome === "early_leave" ? -rng.int(35, 240) * 60_000 : rng.int(-5, 25) * 60_000;
+    pushEvent(
+      assignment.employeeId,
+      assignment.siteId,
+      "clock_out",
+      new Date(plannedEnd + outOffset).toISOString(),
+      source,
+    );
+  }
+
+  /* A handful of people worked shifts nobody rostered them for — cover,
+     callouts, and swaps that never made it into the plan. */
+  const unrosteredCandidates = db.employees.filter(
+    (e) => e.organizationId === ORG_A && e.siteId === "site_ot_mine" && e.status === "active",
+  );
+  for (let i = 0; i < 24; i++) {
+    const employee = rng.pick(unrosteredCandidates);
+    const date = subDays(today, rng.int(1, 12));
+    const rostered = db.rosterAssignments.some(
+      (a) => a.employeeId === employee.id && a.date === d(date) && a.dayType === "shift",
+    );
+    if (rostered) continue;
+
+    const start = new Date(startOfDay(date).getTime() + (23 - 8) * 3_600_000);
+    pushEvent(employee.id, employee.siteId!, "clock_in", start.toISOString(), "terminal");
+    pushEvent(
+      employee.id,
+      employee.siteId!,
+      "clock_out",
+      new Date(start.getTime() + rng.int(8, 12) * 3_600_000).toISOString(),
+      "terminal",
+    );
+  }
+
+  /* A few supervisor corrections, so the override path has real data. */
+  const correctable = observedAssignments.filter((a) => a.date < todayStr).slice(0, 400);
+  for (let i = 0; i < 9 && i < correctable.length; i++) {
+    const assignment = rng.pick(correctable);
+    db.attendanceCorrections.push({
+      id: `ac_${ORG_A}_${i}`,
+      organizationId: ORG_A,
+      employeeId: assignment.employeeId,
+      siteId: assignment.siteId,
+      date: assignment.date,
+      status: "present",
+      derivedStatus: "absent",
+      reason: rng.pick([
+        "Уншигч эвдэрсэн, ээлжийн ахлах биечлэн баталгаажуулсан.",
+        "Картаа гэртээ мартсан, хаалганы бүртгэлээр шалгасан.",
+        "Терминал тасарсан үед ажилласан.",
+      ]),
+      correctedBy: "user_supervisor",
+      correctedAt: addDays(new Date(`${assignment.date}T12:00:00Z`), 1).toISOString(),
+      note: null,
+    });
   }
 
   /* -- users ------------------------------------------------------------- */

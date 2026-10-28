@@ -84,6 +84,7 @@ export const ROLE_DEFINITIONS: RoleDefinition[] = [
       { action: ["read", "update"], subject: ["OrgUnit", "OrgUnitType"] },
       { action: "read", subject: ["Site", "Camp", "RosterPeriod", "RosterAssignment", "Report"] },
       { action: ["read", "approve"], subject: "LeaveRequest" },
+      { action: ["read", "update", "export"], subject: "Attendance" },
       { action: "export", subject: ["Employee", "Report"] },
       { action: "read", subject: "AuditLog" },
       // Explicitly absent: publish/approve RosterPeriod.
@@ -280,6 +281,13 @@ export const ROLE_DEFINITIONS: RoleDefinition[] = [
       },
       { action: "read", subject: "Employee", fields: ["id", "employeeCode", "displayName", "avatarColor", "status"] },
       { action: "read", subject: ["BoardingRecord", "Site"] },
+      {
+        // The gate OBSERVES arrivals; it does not get to decide what they
+        // mean. Create only — no update, no correction.
+        action: ["create", "read"],
+        subject: "Attendance",
+        conditions: { siteId: { $in: "$siteIds" } },
+      },
     ],
   },
 
@@ -303,6 +311,13 @@ export const ROLE_DEFINITIONS: RoleDefinition[] = [
       {
         action: "read",
         subject: ["RosterAssignment", "Attendance"],
+        conditions: { orgUnitPath: { $regex: "$orgUnitPathPrefix" } },
+      },
+      {
+        // Correcting attendance is a judgement about a person's conduct, so
+        // it is scoped to the people this supervisor actually supervises.
+        action: ["create", "update"],
+        subject: "Attendance",
         conditions: { orgUnitPath: { $regex: "$orgUnitPathPrefix" } },
       },
       {

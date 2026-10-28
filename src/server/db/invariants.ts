@@ -349,3 +349,186 @@ export function dedupeConflicts(conflicts: readonly RosterConflict[]): RosterCon
   }
   return out;
 }
+
+/* --------------------------------------------------------- attendance ---- */
+
+export interface ClockEventLike {
+  id: string;
+  employeeId: string;
+  eventType: "clock_in" | "clock_out";
+  occurredAt: string;
+}
+
+export interface PlannedShift {
+  rosterAssignmentId: string;
+  shiftTemplateId: string | null;
+  startAt: string;
+  endAt: string;
+}
+
+export interface AttendanceDerivation {
+  status:
+    | "expected"
+    | "present"
+    | "late"
+    | "partial"
+    | "absent"
+    | "excused"
+    | "unplanned";
+  actualStartAt: string | null;
+  actualEndAt: string | null;
+  lateMinutes: number;
+  earlyLeaveMinutes: number;
+  workedMinutes: number;
+}
+
+export interface DerivationOptions {
+  /** Minutes after planned start before an arrival is late. */
+  graceMinutes: number;
+  /** Minutes before planned end that leaving early stops being rounding. */
+  earlyLeaveGraceMinutes: number;
+  /** Evaluation instant — a shift that has not ended cannot be an absence. */
+  now: string;
+  /** True when approved leave covers the planned window. */
+  onApprovedLeave: boolean;
+}
+
+const MINUTE = 60_000;
+
+/**
+ * Reconcile one person's day: planned shift against observed clock events.
+ *
+ * The ordering of the branches is the business logic:
+ *
+ *   1. Approved leave outranks everything. Someone on leave is EXCUSED, never
+ *      absent — the roster and the leave register disagreeing is a planning
+ *      problem, not a conduct one.
+ *   2. Observation with no plan is UNPLANNED, not ignored. Someone working an
+ *      unrostered shift is exactly what an attendance system exists to show.
+ *   3. A shift still running is EXPECTED, never absent. Marking people absent
+ *      mid-shift is how attendance reports become noise people learn to skip.
+ *   4. Only a finished, unobserved, unexcused shift is ABSENT.
+ */
+export function deriveAttendance(
+  planned: PlannedShift | null,
+  events: readonly ClockEventLike[],
+  options: DerivationOptions,
+): AttendanceDerivation {
+  const ordered = [...events].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+  const firstIn = ordered.find((e) => e.eventType === "clock_in") ?? null;
+  // The last clock-out, and only one that follows the first clock-in: a
+  // trailing clock-out from the previous shift must not close this one.
+  const lastOut =
+    [...ordered]
+      .reverse()
+      .find((e) => e.eventType === "clock_out" && (!firstIn || e.occurredAt > firstIn.occurredAt)) ??
+    null;
+
+  const actualStartAt = firstIn?.occurredAt ?? null;
+  const actualEndAt = lastOut?.occurredAt ?? null;
+
+  const workedMinutes =
+    actualStartAt && actualEndAt
+      ? Math.max(0, Math.round((Date.parse(actualEndAt) - Date.parse(actualStartAt)) / MINUTE))
+      : 0;
+
+  const base = { actualStartAt, actualEndAt, workedMinutes };
+
+  /* 1 — leave outranks everything. */
+  if (planned && options.onApprovedLeave) {
+    return { ...base, status: "excused", lateMinutes: 0, earlyLeaveMinutes: 0 };
+  }
+
+  /* 2 — observed without a plan. */
+  if (!planned) {
+    if (!actualStartAt) {
+      // Nothing planned and nothing observed is not a record at all.
+      return { ...base, status: "expected", lateMinutes: 0, earlyLeaveMinutes: 0 };
+    }
+    return { ...base, status: "unplanned", lateMinutes: 0, earlyLeaveMinutes: 0 };
+  }
+
+  const plannedStart = Date.parse(planned.startAt);
+  const plannedEnd = Date.parse(planned.endAt);
+  const nowMs = Date.parse(options.now);
+
+  /* 3 — nothing observed yet. */
+  if (!actualStartAt) {
+    const shiftOver = nowMs >= plannedEnd;
+    return {
+      ...base,
+      status: shiftOver ? "absent" : "expected",
+      lateMinutes: 0,
+      earlyLeaveMinutes: 0,
+    };
+  }
+
+  const lateMinutes = Math.max(
+    0,
+    Math.round((Date.parse(actualStartAt) - plannedStart) / MINUTE) - options.graceMinutes,
+  );
+
+  /* 4 — observed, but not yet closed out. */
+  if (!actualEndAt) {
+    // Still inside the shift: present (or late), not partial. A missing
+    // clock-out only becomes a problem once the shift has ended.
+    if (nowMs < plannedEnd) {
+      return { ...base, status: lateMinutes > 0 ? "late" : "present", lateMinutes, earlyLeaveMinutes: 0 };
+    }
+    return { ...base, status: "partial", lateMinutes, earlyLeaveMinutes: 0 };
+  }
+
+  const earlyLeaveMinutes = Math.max(
+    0,
+    Math.round((plannedEnd - Date.parse(actualEndAt)) / MINUTE) - options.earlyLeaveGraceMinutes,
+  );
+
+  if (earlyLeaveMinutes > 0) {
+    return { ...base, status: "partial", lateMinutes, earlyLeaveMinutes };
+  }
+
+  return {
+    ...base,
+    status: lateMinutes > 0 ? "late" : "present",
+    lateMinutes,
+    earlyLeaveMinutes: 0,
+  };
+}
+
+/**
+ * Reject a clock event that cannot describe a real sequence.
+ *
+ * Returns a reason string, or null when the event is acceptable.
+ */
+export function validateClockEvent(
+  candidate: { employeeId: string; eventType: "clock_in" | "clock_out"; occurredAt: string },
+  existing: readonly ClockEventLike[],
+  now: string,
+): string | null {
+  if (candidate.occurredAt > now) {
+    return "Ирээдүйн цагаар бүртгэл хийх боломжгүй.";
+  }
+
+  const sameDay = existing
+    .filter((e) => e.employeeId === candidate.employeeId)
+    .sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+
+  const last = sameDay.at(-1);
+  if (!last) {
+    return candidate.eventType === "clock_out"
+      ? "Эхлээд ирснийг бүртгэх шаардлагатай."
+      : null;
+  }
+
+  if (last.eventType === candidate.eventType) {
+    return candidate.eventType === "clock_in"
+      ? "Энэ ажилтан аль хэдийн ирсэн бүртгэлтэй байна."
+      : "Энэ ажилтан аль хэдийн явсан бүртгэлтэй байна.";
+  }
+
+  if (candidate.occurredAt < last.occurredAt) {
+    return "Бүртгэлийн дараалал буруу байна.";
+  }
+
+  return null;
+}

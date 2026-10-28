@@ -3,10 +3,11 @@
 Workforce, roster, camp and transport operations for remote industrial sites.
 Mongolian-first (`mn`), with English available.
 
-**Status:** Phase 1–3 of the roadmap. Dashboard, Org chart, Workforce, Rosters,
-Camps and Accommodation are built. Attendance, Transport, Visitors, Meals,
-Reports and Integrations are permission-gated stubs that state what they will
-do — deliberately not empty screens that look like real ones with no data.
+**Status:** Phase 1–3 plus Attendance. Dashboard, Org chart, Workforce,
+Rosters, Camps, Accommodation and Attendance are built. Transport, Visitors,
+Meals, Reports and Integrations are permission-gated stubs that state what
+they will do — deliberately not empty screens that look like real ones with
+no data.
 
 ## Running it
 
@@ -57,7 +58,18 @@ live sessions.
 These are enforced in `src/server/db/invariants.ts` and asserted in tests:
 
 - A booking is a plan; a check-in is an event; occupancy counts events.
-- A roster assignment is a plan; attendance is an event.
+- A roster assignment is a plan; attendance is an event. Attendance is never
+  materialised — the daily view is a projection of roster + clock events +
+  leave + corrections, so a late punch or a retroactive leave approval changes
+  the answer rather than leaving a stale row behind.
+- Sleeping in camp, turning up for work and being rostered are three separate
+  facts. `/attendance` has a reconciliation panel whose entire purpose is to
+  show where they disagree.
+- Approved leave outranks absence: someone on leave is *excused*, never
+  *absent*. The two are different claims about a person.
+- A shift that has not ended cannot be an absence.
+- A supervisor correction overrides the conclusion, never the evidence: the
+  derived status is kept alongside the override, with actor and reason.
 - Published roster rows keep the org-unit paths they were published with. A
   restructure rewrites current state only.
 - Rest days store no row — absence of a row *is* the rest day.

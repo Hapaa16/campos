@@ -124,14 +124,19 @@ export function DataTable<T extends RowData & { id: string }>({
               {headerGroup.headers.map((header) => {
                 const meta = header.column.columnDef.meta as ColumnMeta | undefined;
                 const sortable = Boolean(meta?.sortKey && onSortChange);
-                const active = sort?.key === meta?.sortKey;
+                // Both sides must exist: `undefined === undefined` is true,
+                // so an unsorted table with unsortable columns was marking
+                // every header active and then dereferencing a missing sort.
+                const active = Boolean(sort && meta?.sortKey && sort.key === meta.sortKey);
 
                 return (
                   <th
                     key={header.id}
                     scope="col"
                     style={{ width: meta?.width }}
-                    aria-sort={active ? (sort!.dir === "asc" ? "ascending" : "descending") : undefined}
+                    aria-sort={
+                      active ? (sort!.dir === "asc" ? "ascending" : "descending") : undefined
+                    }
                     className={cn(
                       "border-b border-line bg-canvas px-[var(--cell-px)] py-1.5 text-left text-2xs font-semibold uppercase tracking-wider text-text-3",
                       meta?.align === "right" && "text-right",
@@ -145,8 +150,8 @@ export function DataTable<T extends RowData & { id: string }>({
                         className="ui-transition inline-flex items-center gap-1 rounded-[3px] hover:text-text-2 focus-visible:ring-2 focus-visible:ring-accent-soft"
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {active ? (
-                          sort!.dir === "asc" ? (
+                        {active && sort ? (
+                          sort.dir === "asc" ? (
                             <ArrowUp className="size-3 text-accent" />
                           ) : (
                             <ArrowDown className="size-3 text-accent" />

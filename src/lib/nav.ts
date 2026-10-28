@@ -97,7 +97,6 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: UserCheck,
         labelKey: "nav.attendance",
         permission: { action: "read", subject: "Attendance" },
-        stubPhase: 6,
       },
       {
         key: "camps",

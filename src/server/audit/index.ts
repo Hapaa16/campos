@@ -34,6 +34,7 @@ const REASON_REQUIRED = new Set([
   "booking.cancel",
   "role.update",
   "employee.terminate",
+  "attendance.correct",
 ]);
 
 export async function recordAudit(ctx: DataContext, entry: AuditEntry): Promise<AuditLog> {

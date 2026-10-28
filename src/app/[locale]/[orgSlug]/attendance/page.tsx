@@ -1,40 +1,30 @@
 import { setRequestLocale } from "next-intl/server";
-import { UserCheck } from "lucide-react";
 import { requireAbility } from "@/lib/authz/guard";
-import { ModuleStub } from "@/components/app/module-stub";
+import { getAttendanceBoard } from "@/server/services/attendance";
+import { AttendanceView } from "@/features/attendance/attendance-view";
+import type { AttendanceStatus } from "@/server/db/schema";
 
 export default async function AttendancePage({
   params,
+  searchParams,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; orgSlug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { locale } = await params;
+  const { locale, orgSlug } = await params;
   setRequestLocale(locale);
 
-  // Gated exactly as the real module will be, so the permission wiring is
-  // already correct when the screens arrive.
-  await requireAbility("read", "Attendance");
+  const ctx = await requireAbility("read", "Attendance");
+  const sp = await searchParams;
 
-  return (
-    <ModuleStub
-      titleKey="nav.attendance"
-      icon={UserCheck}
-      phase={6}
-      capabilities={
-        locale === "en"
-          ? [
-        "Planned vs actual attendance",
-        "Late arrivals and absences",
-        "Supervisor corrections and reconciliation",
-        "Biometric / access-control integration",
-            ]
-          : [
-        "Төлөвлөсөн ба бодит ирцийн харьцуулалт",
-        "Хоцролт, тасалсан бүртгэл",
-        "Ахлахын засвар, тулгалт",
-        "Биометр / нэвтрэлтийн системтэй холболт",
-            ]
-      }
-    />
-  );
+  const data = getAttendanceBoard(ctx, {
+    date: typeof sp.date === "string" && sp.date ? sp.date : undefined,
+    siteId: typeof sp.site === "string" && sp.site ? sp.site : undefined,
+    search: typeof sp.q === "string" ? sp.q : undefined,
+    status:
+      typeof sp.status === "string" && sp.status ? [sp.status as AttendanceStatus] : undefined,
+    exceptionsOnly: sp.exceptions === "true",
+  });
+
+  return <AttendanceView data={data} orgSlug={orgSlug} />;
 }

@@ -91,6 +91,14 @@ registerFields("AccommodationBooking", [
   "createdAt", "createdBy", "idempotencyKey", "note",
 ]);
 
+registerFields("Attendance", [
+  "id", "organizationId", "employeeId", "orgUnitPath", "siteId", "date",
+  "rosterAssignmentId", "shiftTemplateId", "plannedStartAt", "plannedEndAt",
+  "actualStartAt", "actualEndAt", "status", "derivedStatus",
+  "lateMinutes", "earlyLeaveMinutes", "workedMinutes",
+  "correctedBy", "correctedAt", "correctionReason", "source", "note",
+]);
+
 registerFields("AuditLog", [
   "id", "organizationId", "actorUserId", "actorName", "action", "subject",
   "subjectId", "before", "after", "reason", "ip", "at",

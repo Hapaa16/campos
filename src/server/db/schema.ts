@@ -21,6 +21,10 @@ export interface Organization {
   timezone: string;
   defaultLocale: "mn" | "en";
   status: "active" | "suspended";
+  /** Minutes after shift start before an arrival counts as late. */
+  attendanceGraceMinutes: number;
+  /** Minutes before shift end that leaving early stops being rounding. */
+  earlyLeaveGraceMinutes: number;
 }
 
 export interface Site {
@@ -304,6 +308,81 @@ export interface AccommodationBooking {
   createdAt: ISODateTime;
   createdBy: string;
   idempotencyKey: string | null;
+  note: string | null;
+}
+
+/* ---------------------------------------------------------- attendance ---- */
+
+/**
+ * A raw clock fact.
+ *
+ * Append-only and never edited: it records that a reader, a terminal or a
+ * supervisor asserted someone was at work at an instant. Corrections produce
+ * a new event or adjust the derived record — they do not rewrite history.
+ *
+ * Deliberately NOT the same thing as an accommodation check-in. Sleeping in
+ * camp is not evidence of working, and working is not evidence of sleeping in
+ * camp; conflating them is how a site reports attendance it never observed.
+ */
+export interface AttendanceEvent {
+  id: string;
+  organizationId: string;
+  employeeId: string;
+  siteId: string;
+  eventType: "clock_in" | "clock_out";
+  occurredAt: ISODateTime;
+  source: "terminal" | "biometric" | "manual" | "import" | "mobile";
+  /** Reader or terminal identifier, when the source is a device. */
+  deviceId: string | null;
+  /** The user who entered it, when the source is manual. */
+  recordedBy: string | null;
+  /** Set once the event has been folded into a daily record. */
+  attendanceRecordId: string | null;
+  /** Repeat submissions from a flaky reader must not double-count. */
+  idempotencyKey: string | null;
+}
+
+export type AttendanceStatus =
+  /** Rostered, but the shift has not started yet. */
+  | "expected"
+  /** Clocked in within the grace period. */
+  | "present"
+  /** Clocked in after the grace period. */
+  | "late"
+  /** Clocked in but left early, or never clocked out. */
+  | "partial"
+  /** Rostered, shift over, nothing observed. */
+  | "absent"
+  /** Rostered but covered by approved leave — not the same as absent. */
+  | "excused"
+  /** Observed at work with no roster assignment. */
+  | "unplanned";
+
+/**
+ * A supervisor's override of a derived status.
+ *
+ * Attendance itself is NOT stored: the daily view is a projection of the
+ * roster, the clock events and the leave register. Materialising it would
+ * create a third truth that silently drifts whenever any of those three
+ * change — a roster edit, a late clock event, a retroactive leave approval.
+ *
+ * What cannot be derived is a human judgement ("the reader was broken, he was
+ * here"), so that is the only thing written down, as a sparse overlay with
+ * the actor and the reason attached.
+ */
+export interface AttendanceCorrection {
+  id: string;
+  organizationId: string;
+  employeeId: string;
+  siteId: string;
+  date: ISODate;
+  /** The status a supervisor asserts, overriding what was derived. */
+  status: AttendanceStatus;
+  /** What the system had derived, kept so the disagreement stays visible. */
+  derivedStatus: AttendanceStatus;
+  reason: string;
+  correctedBy: string;
+  correctedAt: ISODateTime;
   note: string | null;
 }
 
