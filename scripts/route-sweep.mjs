@@ -23,7 +23,7 @@ const ROUTES = [
   ["/approvals", "approvals"],
   ["/settings/roles", "settings-roles"],
   ["/attendance", "attendance"],
-  ["/transport", "stub"],
+  ["/transport", "transport"],
   ["/visitors", "stub"],
   ["/meals", "stub"],
   ["/reports", "stub"],

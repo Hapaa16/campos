@@ -311,6 +311,163 @@ export interface AccommodationBooking {
   note: string | null;
 }
 
+/* ----------------------------------------------------------- transport ---- */
+
+export type VehicleOwnership = "owned" | "contracted";
+export type VehicleStatus = "active" | "maintenance" | "retired";
+
+export interface Vehicle {
+  id: string;
+  organizationId: string;
+  registrationNumber: string;
+  vehicleType: "bus" | "coaster" | "van" | "4wd";
+  seatingCapacity: number;
+  ownership: VehicleOwnership;
+  /** Set when the vehicle belongs to a contractor rather than to us. */
+  providerName: string | null;
+  status: VehicleStatus;
+  note: string | null;
+}
+
+export interface Driver {
+  id: string;
+  organizationId: string;
+  /** Null for a contractor's driver, who is not our employee. */
+  employeeId: string | null;
+  fullName: string;
+  phone: string;
+  licenceNumber: string;
+  licenceExpiresAt: ISODate;
+  providerName: string | null;
+  status: "active" | "suspended" | "inactive";
+}
+
+export interface TransportRoute {
+  id: string;
+  organizationId: string;
+  code: string;
+  name: string;
+  origin: string;
+  destination: string;
+  /** Scheduled duration, used to seed a trip's estimated arrival. */
+  durationMinutes: number;
+  status: "active" | "archived";
+}
+
+export interface TransportStop {
+  id: string;
+  organizationId: string;
+  routeId: string;
+  name: string;
+  /** Position along the route. Legs are expressed between these numbers. */
+  sequenceNumber: number;
+  /** Minutes after departure that the vehicle reaches this stop. */
+  scheduledOffsetMinutes: number;
+  siteId: string | null;
+  campId: string | null;
+}
+
+export type TripStatus =
+  | "scheduled"
+  | "boarding"
+  | "departed"
+  | "arrived"
+  | "cancelled"
+  | "delayed";
+
+export interface TransportTrip {
+  id: string;
+  organizationId: string;
+  routeId: string;
+  /** Null until a vehicle is assigned — a scheduled trip need not have one. */
+  vehicleId: string | null;
+  driverId: string | null;
+  departureAt: ISODateTime;
+  estimatedArrivalAt: ISODateTime;
+  actualDepartureAt: ISODateTime | null;
+  actualArrivalAt: ISODateTime | null;
+  status: TripStatus;
+  /** Set when status is `cancelled` or `delayed`. */
+  statusReason: string | null;
+  note: string | null;
+}
+
+export type BookingStatusTransport = "requested" | "confirmed" | "cancelled" | "completed";
+
+/**
+ * A request to travel.
+ *
+ * Deliberately NOT a seat on a bus. One booking can span several trips (an
+ * overnight leg, a transfer, a return) and a trip carries passengers from many
+ * bookings. Modelling a booking as "one person on one bus" is what makes
+ * transfers and returns impossible to express later.
+ */
+export interface TransportBooking {
+  id: string;
+  organizationId: string;
+  bookingReference: string;
+  requestedBy: string;
+  requestedAt: ISODateTime;
+  status: BookingStatusTransport;
+  purpose: string | null;
+  note: string | null;
+  idempotencyKey: string | null;
+}
+
+export type PassengerStatus = "booked" | "boarded" | "no_show" | "cancelled" | "arrived";
+
+/**
+ * One person on one trip, between two stops.
+ *
+ * The stop pair is what makes seat capacity a segment problem rather than a
+ * headcount: a passenger riding stops 1→2 does not occupy a seat on leg 3→4.
+ */
+export interface TransportPassenger {
+  id: string;
+  organizationId: string;
+  bookingId: string;
+  tripId: string;
+  /** Exactly one of these is set. */
+  employeeId: string | null;
+  visitorId: string | null;
+  boardingStopId: string;
+  destinationStopId: string;
+  status: PassengerStatus;
+  seatNumber: string | null;
+}
+
+/**
+ * A physical boarding event.
+ *
+ * Separate from the passenger row on purpose: being booked on a bus is not
+ * evidence of having got on it, exactly as a bed reservation is not evidence
+ * of having slept in it.
+ */
+export interface BoardingRecord {
+  id: string;
+  organizationId: string;
+  passengerId: string;
+  tripId: string;
+  eventType: "boarded" | "alighted" | "no_show";
+  occurredAt: ISODateTime;
+  stopId: string;
+  recordedBy: string;
+  /** Set when a QR pass was scanned rather than a name ticked off. */
+  scannedCode: string | null;
+}
+
+export interface TransportIncident {
+  id: string;
+  organizationId: string;
+  tripId: string;
+  incidentType: "breakdown" | "delay" | "road_closure" | "accident" | "weather" | "other";
+  description: string;
+  occurredAt: ISODateTime;
+  delayMinutes: number | null;
+  status: "open" | "resolved";
+  reportedBy: string;
+}
+
 /* ---------------------------------------------------------- attendance ---- */
 
 /**

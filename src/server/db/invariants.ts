@@ -532,3 +532,134 @@ export function validateClockEvent(
 
   return null;
 }
+
+/* ---------------------------------------------------- transport: resources -- */
+
+export interface TripWindow {
+  id: string;
+  vehicleId: string | null;
+  driverId: string | null;
+  departureAt: string;
+  estimatedArrivalAt: string;
+  status: string;
+}
+
+/** Trip states that actually tie up a vehicle and a driver. */
+export const ACTIVE_TRIP_STATUSES = ["scheduled", "boarding", "departed", "delayed"] as const;
+
+export function tripHoldsResources(status: string): boolean {
+  return (ACTIVE_TRIP_STATUSES as readonly string[]).includes(status);
+}
+
+export type ResourceConflict =
+  | { kind: "vehicle"; tripId: string; message: string }
+  | { kind: "driver"; tripId: string; message: string };
+
+/**
+ * A vehicle and a driver can each only be in one place at a time.
+ *
+ * Turnaround padding is deliberate: a bus scheduled to arrive at 18:00 cannot
+ * depart on another route at 18:05. Allowing back-to-back trips with no slack
+ * produces a timetable that is valid on paper and impossible on the road.
+ */
+export function findTripResourceConflicts(
+  candidate: TripWindow,
+  existing: readonly TripWindow[],
+  turnaroundMinutes = 45,
+): ResourceConflict[] {
+  if (!tripHoldsResources(candidate.status)) return [];
+
+  const padding = turnaroundMinutes * 60_000;
+  const from = Date.parse(candidate.departureAt) - padding;
+  const to = Date.parse(candidate.estimatedArrivalAt) + padding;
+
+  const conflicts: ResourceConflict[] = [];
+
+  for (const other of existing) {
+    if (other.id === candidate.id) continue;
+    if (!tripHoldsResources(other.status)) continue;
+
+    const otherFrom = Date.parse(other.departureAt);
+    const otherTo = Date.parse(other.estimatedArrivalAt);
+    const overlaps = from < otherTo && otherFrom < to;
+    if (!overlaps) continue;
+
+    if (candidate.vehicleId && other.vehicleId === candidate.vehicleId) {
+      conflicts.push({
+        kind: "vehicle",
+        tripId: other.id,
+        message: "Энэ тээврийн хэрэгсэл тухайн цагт өөр рейсэд хуваарилагдсан байна.",
+      });
+    }
+    if (candidate.driverId && other.driverId === candidate.driverId) {
+      conflicts.push({
+        kind: "driver",
+        tripId: other.id,
+        message: "Энэ жолооч тухайн цагт өөр рейсэд хуваарилагдсан байна.",
+      });
+    }
+  }
+
+  return conflicts;
+}
+
+/* ------------------------------------------------- transport: seat demand -- */
+
+export interface PassengerLeg extends SegmentLeg {
+  passengerId: string;
+  status: string;
+}
+
+/** Passenger states that actually consume a seat. */
+export function passengerHoldsSeat(status: string): boolean {
+  return status === "booked" || status === "boarded" || status === "arrived";
+}
+
+export interface LegLoad {
+  fromSeq: number;
+  toSeq: number;
+  occupancy: number;
+}
+
+/**
+ * Occupancy on every leg of a route, not just the peak.
+ *
+ * The peak alone tells you a trip is full; this tells you *where*, which is
+ * what a coordinator needs in order to decide whether a second vehicle is
+ * required for one stretch or for the whole run.
+ */
+export function legLoads(legs: readonly SegmentLeg[], stopCount: number): LegLoad[] {
+  const loads: LegLoad[] = [];
+  for (let seq = 0; seq < stopCount - 1; seq++) {
+    const occupancy = legs.filter(
+      (leg) => leg.boardingSeq <= seq && leg.destinationSeq > seq,
+    ).length;
+    loads.push({ fromSeq: seq, toSeq: seq + 1, occupancy });
+  }
+  return loads;
+}
+
+/**
+ * Seats still sellable for a specific journey.
+ *
+ * Returns the smallest remaining capacity across the legs the journey spans —
+ * a trip with 40 free seats overall has none for a passenger whose leg is the
+ * full one.
+ */
+export function seatsAvailableForLeg(
+  existing: readonly SegmentLeg[],
+  candidate: SegmentLeg,
+  seatingCapacity: number,
+): number {
+  if (candidate.destinationSeq <= candidate.boardingSeq) {
+    throw new RangeError("Буух зогсоол нь суух зогсоолоос хойш байх ёстой.");
+  }
+  let worst = seatingCapacity;
+  for (let seq = candidate.boardingSeq; seq < candidate.destinationSeq; seq++) {
+    const onBoard = existing.filter(
+      (leg) => leg.boardingSeq <= seq && leg.destinationSeq > seq,
+    ).length;
+    worst = Math.min(worst, seatingCapacity - onBoard);
+  }
+  return Math.max(0, worst);
+}

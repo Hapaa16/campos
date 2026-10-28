@@ -18,7 +18,7 @@ import { buildSeed, type Database } from "./seed";
  * properties of undefined" rather than as anything resembling a schema error.
  * This is the migration marker in miniature.
  */
-const SEED_VERSION = 3;
+const SEED_VERSION = 5;
 
 const globalRef = globalThis as typeof globalThis & {
   __camposDb?: Database;

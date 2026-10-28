@@ -99,6 +99,42 @@ registerFields("Attendance", [
   "correctedBy", "correctedAt", "correctionReason", "source", "note",
 ]);
 
+registerFields("Vehicle", [
+  "id", "organizationId", "registrationNumber", "vehicleType", "seatingCapacity",
+  "ownership", "providerName", "status", "note",
+]);
+
+registerFields("Driver", [
+  "id", "organizationId", "employeeId", "fullName", "phone",
+  "licenceNumber", "licenceExpiresAt", "providerName", "status",
+]);
+
+registerFields("TransportRoute", [
+  "id", "organizationId", "code", "name", "origin", "destination",
+  "durationMinutes", "status",
+]);
+
+registerFields("TransportTrip", [
+  "id", "organizationId", "routeId", "vehicleId", "driverId",
+  "departureAt", "estimatedArrivalAt", "actualDepartureAt", "actualArrivalAt",
+  "status", "statusReason", "note",
+]);
+
+registerFields("TransportBooking", [
+  "id", "organizationId", "bookingReference", "requestedBy", "requestedAt",
+  "status", "purpose", "note", "idempotencyKey",
+]);
+
+registerFields("TransportPassenger", [
+  "id", "organizationId", "bookingId", "tripId", "employeeId", "visitorId",
+  "boardingStopId", "destinationStopId", "status", "seatNumber",
+]);
+
+registerFields("BoardingRecord", [
+  "id", "organizationId", "passengerId", "tripId", "eventType",
+  "occurredAt", "stopId", "recordedBy", "scannedCode",
+]);
+
 registerFields("AuditLog", [
   "id", "organizationId", "actorUserId", "actorName", "action", "subject",
   "subjectId", "before", "after", "reason", "ip", "at",

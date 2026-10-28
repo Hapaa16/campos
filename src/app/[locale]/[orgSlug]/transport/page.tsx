@@ -1,42 +1,28 @@
 import { setRequestLocale } from "next-intl/server";
-import { BusFront } from "lucide-react";
 import { requireAbility } from "@/lib/authz/guard";
-import { ModuleStub } from "@/components/app/module-stub";
+import { getTransportBoard } from "@/server/services/transport";
+import { TransportView } from "@/features/transport/transport-view";
 
 export default async function TransportPage({
   params,
+  searchParams,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; orgSlug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { locale } = await params;
+  const { locale, orgSlug } = await params;
   setRequestLocale(locale);
 
-  // Gated exactly as the real module will be, so the permission wiring is
-  // already correct when the screens arrive.
-  await requireAbility("read", "TransportTrip");
+  const ctx = await requireAbility("read", "TransportTrip");
+  const sp = await searchParams;
 
-  return (
-    <ModuleStub
-      titleKey="nav.transport"
-      icon={BusFront}
-      phase={4}
-      capabilities={
-        locale === "en"
-          ? [
-        "Vehicles and drivers",
-        "Routes, stops and scheduled trips",
-        "Passenger manifests and seat control",
-        "Segment-aware seat capacity (algorithm built and tested)",
-        "Boarding confirmation reconciled against camp arrivals",
-            ]
-          : [
-        "Тээврийн хэрэгсэл, жолоочийн бүртгэл",
-        "Маршрут, зогсоол, рейсийн хуваарь",
-        "Зорчигчийн жагсаалт, суудлын хяналт",
-        "Сегмент тус бүрийн суудлын багтаамж (алгоритм бэлэн, тестлэгдсэн)",
-        "Суултын баталгаажуулалт, кэмпийн ирэлттэй тулгалт",
-            ]
-      }
-    />
-  );
+  const data = getTransportBoard(ctx, {
+    from: typeof sp.from === "string" && sp.from ? sp.from : undefined,
+    days: Number(sp.days ?? 7) || 7,
+    routeId: typeof sp.route === "string" && sp.route ? sp.route : undefined,
+    search: typeof sp.q === "string" ? sp.q : undefined,
+    fullOnly: sp.full === "true",
+  });
+
+  return <TransportView data={data} orgSlug={orgSlug} />;
 }

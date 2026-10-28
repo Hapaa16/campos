@@ -118,7 +118,6 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: BusFront,
         labelKey: "nav.transport",
         permission: { action: "read", subject: "TransportTrip" },
-        stubPhase: 4,
       },
       {
         key: "visitors",
