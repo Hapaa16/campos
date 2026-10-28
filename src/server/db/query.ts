@@ -94,11 +94,23 @@ export function query<T extends TenantRow>(
   ctx: DataContext,
   type: Subject,
   rows: readonly T[],
+  /**
+   * Optional narrowing predicate applied BEFORE the ability pass.
+   *
+   * Safe by construction: it can only remove rows, never add them, so the
+   * tenant floor and the ability filter still see every row that survives.
+   * It exists because evaluating CASL conditions across a 58,000-row table to
+   * then keep 2,000 of them is wasted work — this is the index the real
+   * database will do in SQL.
+   */
+  prefilter?: (row: T) => boolean,
 ): Query<T> {
+  const candidates = prefilter ? rows.filter(prefilter) : rows;
+
   // 1 — tenant floor. The authoritative isolation boundary.
   const tenantScoped = ctx.auth.isPlatformAdmin
-    ? [...rows]
-    : rows.filter((r) => r.organizationId === ctx.auth.organizationId);
+    ? [...candidates]
+    : candidates.filter((r) => r.organizationId === ctx.auth.organizationId);
 
   // 2 — row-level ability (camp/site/subtree/$self conditions).
   const visible = tenantScoped.filter((r) => canOn(ctx.ability, "read", type, r));

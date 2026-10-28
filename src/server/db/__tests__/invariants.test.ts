@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dedupeConflicts,
   findBedBookingConflicts,
   findLeaveConflicts,
   findOverlappingShifts,
@@ -221,5 +222,28 @@ describe("segment-aware seat capacity", () => {
   it("is zero for an empty trip and rejects an inverted leg", () => {
     expect(peakSegmentOccupancy([])).toBe(0);
     expect(() => peakSegmentOccupancy([{ boardingSeq: 3, destinationSeq: 1 }])).toThrow(RangeError);
+  });
+});
+
+describe("conflict deduplication", () => {
+  it("collapses the two halves of one pairwise clash", () => {
+    const pair = [
+      { kind: "overlapping_shift" as const, employeeId: "e1", date: "2026-11-02", message: "x", relatedId: "a2" },
+      { kind: "overlapping_shift" as const, employeeId: "e1", date: "a2", message: "x", relatedId: "2026-11-02" },
+    ];
+    expect(dedupeConflicts(pair)).toHaveLength(1);
+  });
+
+  it("keeps genuinely different clashes", () => {
+    const list = [
+      { kind: "overlapping_shift" as const, employeeId: "e1", date: "2026-11-02", message: "x", relatedId: "a2" },
+      { kind: "leave_conflict" as const, employeeId: "e1", date: "2026-11-02", message: "y", relatedId: "l1" },
+      { kind: "overlapping_shift" as const, employeeId: "e2", date: "2026-11-02", message: "x", relatedId: "a2" },
+    ];
+    expect(dedupeConflicts(list)).toHaveLength(3);
+  });
+
+  it("is a no-op on an empty list", () => {
+    expect(dedupeConflicts([])).toEqual([]);
   });
 });

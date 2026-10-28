@@ -328,3 +328,24 @@ export function hasSegmentCapacity(
 ): boolean {
   return peakSegmentOccupancy([...existing, candidate]) <= seatingCapacity;
 }
+
+/**
+ * Collapse a conflict list to one entry per real problem.
+ *
+ * Pairwise checks naturally report the same clash twice — once from each side
+ * of the pair — so a four-cell edit can surface "19 conflicts" when there are
+ * nine. An inflated count trains people to ignore the number.
+ */
+export function dedupeConflicts(conflicts: readonly RosterConflict[]): RosterConflict[] {
+  const seen = new Set<string>();
+  const out: RosterConflict[] = [];
+  for (const conflict of conflicts) {
+    // A pair {A,B} and {B,A} must produce the same key, so sort the ends.
+    const ends = [conflict.date, conflict.relatedId ?? ""].sort().join("~");
+    const key = `${conflict.kind}|${conflict.employeeId}|${ends}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(conflict);
+  }
+  return out;
+}

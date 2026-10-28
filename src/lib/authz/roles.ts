@@ -123,8 +123,17 @@ export const ROLE_DEFINITIONS: RoleDefinition[] = [
       {
         // No silent overwriting of published roster history.
         action: ["update", "delete"],
-        subject: ["RosterPeriod", "RosterAssignment"],
+        subject: "RosterPeriod",
         conditions: { status: { $in: ["draft", "review"] } },
+      },
+      {
+        // RosterAssignment has its OWN status vocabulary (planned/confirmed/
+        // cancelled), not the period's. Reusing the period's values here made
+        // every edit fail: a planner could create a row and then never touch
+        // it again. `confirmed` means the row belongs to a published roster.
+        action: ["update", "delete"],
+        subject: "RosterAssignment",
+        conditions: { status: { $in: ["planned", "cancelled"] } },
       },
       { action: "read", subject: [...ROSTER_CONTEXT], fields: undefined },
       { action: "read", subject: "Employee", fields: PUBLIC_EMPLOYEE },
