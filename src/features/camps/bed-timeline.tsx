@@ -5,7 +5,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTranslations } from "next-intl";
 import { parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-import { ROW_HEIGHT, useDensity } from "@/components/app/density";
+import { useDensity, useRowHeight } from "@/components/app/density";
 import type { BedSlot, BedBookingView } from "@/server/services/camps";
 
 const BED_COL = 190;
@@ -44,7 +44,7 @@ export function BedTimeline({
 }) {
   const t = useTranslations("camp");
   const { density } = useDensity();
-  const rowHeight = ROW_HEIGHT[density];
+  const rowHeight = useRowHeight();
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({

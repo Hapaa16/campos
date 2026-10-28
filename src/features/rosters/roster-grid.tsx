@@ -5,7 +5,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTranslations } from "next-intl";
 import { parseISO } from "date-fns";
 import { Avatar } from "@/components/ui/misc";
-import { ROW_HEIGHT, useDensity } from "@/components/app/density";
+import { useDensity, useRowHeight } from "@/components/app/density";
 import { cn } from "@/lib/utils";
 import { RosterCellView } from "./cell";
 import type { RosterGridData } from "@/server/services/rosters";
@@ -58,7 +58,7 @@ export function RosterGrid({
 }) {
   const t = useTranslations("roster");
   const { density } = useDensity();
-  const rowHeight = ROW_HEIGHT[density];
+  const rowHeight = useRowHeight();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = React.useState(false);
 

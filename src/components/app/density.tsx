@@ -49,9 +49,20 @@ export function useDensity() {
   return React.useContext(DensityContext);
 }
 
-/** Pixel row height for the active density — for virtualizer measurements. */
+/**
+ * Row height per density, in pixels.
+ *
+ * MUST match `--row-h` in src/styles/theme.css. The virtualizer positions
+ * rows from these numbers while CSS paints the cells, so a disagreement makes
+ * the list silently overlap or gap. A test asserts the two stay in step —
+ * cheaper and more reliable than measuring the DOM at runtime.
+ */
 export const ROW_HEIGHT: Record<Density, number> = {
   comfortable: 44,
   compact: 36,
   dense: 28,
 };
+
+export function useRowHeight(): number {
+  return ROW_HEIGHT[useDensity().density];
+}

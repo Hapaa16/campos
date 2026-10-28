@@ -14,7 +14,7 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ROW_HEIGHT, useDensity } from "@/components/app/density";
+import { useRowHeight } from "@/components/app/density";
 
 /* ===========================================================================
    Dense data table.
@@ -77,8 +77,7 @@ export function DataTable<T extends RowData & { id: string }>({
   columnVisibility?: Record<string, boolean>;
   onColumnVisibilityChange?: (next: Record<string, boolean>) => void;
 }) {
-  const { density } = useDensity();
-  const rowHeight = ROW_HEIGHT[density];
+  const rowHeight = useRowHeight();
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   const table = useTable({
