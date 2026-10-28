@@ -39,19 +39,14 @@ export function ConfirmDialog({
   const [reason, setReason] = React.useState("");
   const [pending, setPending] = React.useState(false);
 
-  React.useEffect(() => {
-    if (open) {
-      setToggle(false);
-      setReason("");
-      setPending(false);
-    }
-  }, [open]);
-
   const blocked = (requireReason && !reason.trim()) || pending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent width="md">
+      {/* Keyed on `open` so each opening gets a clean component rather than a
+          hand-written reset — a stale reason carried into the next dialog is
+          worse than a remount. */}
+      <DialogContent width="md" key={String(open)}>
         <DialogHeader title={title} />
         <DialogBody className="space-y-3">
           <p className="text-sm text-text-2">{body}</p>

@@ -14,8 +14,6 @@ import {
   type BedBookingLike,
 } from "../invariants";
 
-const T = (h: string) => `2026-11-0${h}`;
-
 describe("bed double-booking (stands in for the EXCLUDE constraint)", () => {
   const existing: BedBookingLike[] = [
     { id: "b1", bedId: "bed1", status: "reserved", startAt: "2026-11-01T00:00:00Z", endAt: "2026-11-10T10:00:00Z" },

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLocalPreference } from "@/lib/use-debounced-search";
 
 /**
  * Density is a first-class setting, not a style tweak.
@@ -14,6 +15,10 @@ export type Density = "comfortable" | "compact" | "dense";
 const STORAGE_KEY = "campos.density";
 const DEFAULT: Density = "compact";
 
+function isDensity(value: string): value is Density {
+  return value === "comfortable" || value === "compact" || value === "dense";
+}
+
 interface DensityContextValue {
   density: Density;
   setDensity: (d: Density) => void;
@@ -25,23 +30,18 @@ const DensityContext = React.createContext<DensityContextValue>({
 });
 
 export function DensityProvider({ children }: { children: React.ReactNode }) {
-  const [density, setDensityState] = React.useState<Density>(DEFAULT);
+  const [density, setStored] = useLocalPreference<Density>(STORAGE_KEY, DEFAULT, isDensity);
 
+  // The attribute drives the CSS tokens, so it is an external system to keep
+  // in sync — which is exactly what an effect is for.
   React.useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY) as Density | null;
-    if (stored === "comfortable" || stored === "compact" || stored === "dense") {
-      setDensityState(stored);
-      document.documentElement.dataset.density = stored;
-    }
-  }, []);
+    document.documentElement.dataset.density = density;
+  }, [density]);
 
-  const setDensity = React.useCallback((d: Density) => {
-    setDensityState(d);
-    document.documentElement.dataset.density = d;
-    window.localStorage.setItem(STORAGE_KEY, d);
-  }, []);
-
-  const value = React.useMemo(() => ({ density, setDensity }), [density, setDensity]);
+  const value = React.useMemo(
+    () => ({ density, setDensity: setStored }),
+    [density, setStored],
+  );
   return <DensityContext.Provider value={value}>{children}</DensityContext.Provider>;
 }
 

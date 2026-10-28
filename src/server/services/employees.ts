@@ -51,6 +51,9 @@ export interface EmployeeListResult extends Page<Partial<Employee>> {
 
 const collator = new Intl.Collator("mn", { sensitivity: "base", numeric: true });
 
+/** How far ahead a certification counts as "expiring soon". */
+export const EXPIRY_HORIZON_DAYS = 60;
+
 export function listEmployees(ctx: DataContext, params: EmployeeListParams): EmployeeListResult {
   const data = db();
   const limit = Math.min(Math.max(params.limit ?? 100, 1), 500);
@@ -144,8 +147,26 @@ function countBy<T>(rows: readonly T[], key: (row: T) => string): Record<string,
   return out;
 }
 
+export type QualificationState = "valid" | "expiring" | "expired";
+
+export interface QualificationView {
+  code: string;
+  name: string;
+  issuedAt: string;
+  expiresAt: string | null;
+  state: QualificationState;
+}
+
 export interface EmployeeDetail {
   employee: Partial<Employee>;
+  /**
+   * Certifications with their validity already decided.
+   *
+   * The clock is read here, once per request, rather than in the component:
+   * "is this expiring soon" is a business rule, and reading the time during
+   * render makes the answer depend on when React happened to re-render.
+   */
+  qualifications: QualificationView[];
   withheld: string[];
   orgUnitName: string | null;
   siteName: string | null;
@@ -177,6 +198,24 @@ export function getEmployee(ctx: DataContext, id: string): EmployeeDetail {
     ? query(ctx, "Employee", data.employees).where((e) => e.id === employee.supervisorId).first()
     : null;
 
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const soonCutoff = new Date(today.getTime() + EXPIRY_HORIZON_DAYS * 864e5)
+    .toISOString()
+    .slice(0, 10);
+
+  const qualifications: QualificationView[] = (employee.qualifications ?? []).map((q) => ({
+    ...q,
+    state:
+      q.expiresAt === null
+        ? "valid"
+        : q.expiresAt < todayStr
+          ? "expired"
+          : q.expiresAt <= soonCutoff
+            ? "expiring"
+            : "valid",
+  }));
+
   const directReports = query(ctx, "Employee", data.employees)
     .where((e) => e.supervisorId === employee.id)
     .sort((a, b) => collator.compare(a.displayName, b.displayName))
@@ -186,6 +225,7 @@ export function getEmployee(ctx: DataContext, id: string): EmployeeDetail {
 
   return {
     employee: masked,
+    qualifications,
     withheld: withheldFields(ctx.ability, "Employee", employee),
     orgUnitName: unit?.name ?? null,
     siteName: site?.name ?? null,

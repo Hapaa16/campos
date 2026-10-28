@@ -19,7 +19,6 @@ export function UnitPanel({
   orgSlug: string;
 }) {
   const t = useTranslations("org");
-  const tw = useTranslations("workforce");
 
   return (
     <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-line bg-surface lg:flex">

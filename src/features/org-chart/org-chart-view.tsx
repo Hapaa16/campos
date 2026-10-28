@@ -95,16 +95,32 @@ function OrgChartCanvas({
     );
   }, [search, tree.nodes]);
 
-  React.useEffect(() => {
-    if (!matches || matches.size === 0) return;
-    // Unfold the ancestors of every match, so a hit is never hidden inside a
-    // collapsed branch.
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      for (const id of matches) for (const ancestor of ancestorsOf(tree.nodes, id)) next.delete(ancestor);
-      return next;
-    });
-  }, [matches, tree.nodes]);
+  // Revealing matches happens in the search handler, not in an effect
+  // reacting to the result: it is a consequence of the user typing, so it
+  // belongs on that event.
+  const onSearchChange = React.useCallback(
+    (value: string) => {
+      setSearch(value);
+      const needle = value.trim().toLowerCase();
+      if (!needle) return;
+
+      const hits = tree.nodes.filter(
+        (n) => n.name.toLowerCase().includes(needle) || n.code.toLowerCase().includes(needle),
+      );
+      if (hits.length === 0) return;
+
+      // Unfold the ancestors of every match, so a hit is never hidden inside a
+      // collapsed branch.
+      setCollapsed((prev) => {
+        const next = new Set(prev);
+        for (const hit of hits) {
+          for (const ancestor of ancestorsOf(tree.nodes, hit.id)) next.delete(ancestor);
+        }
+        return next;
+      });
+    },
+    [tree.nodes],
+  );
 
   /* -- layout ------------------------------------------------------------ */
   const layout = React.useMemo(
@@ -229,7 +245,7 @@ function OrgChartCanvas({
             <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-text-3" aria-hidden />
             <Input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t("searchUnit")}
               aria-label={t("searchUnit")}
               className="h-[var(--control-h-sm)] w-56 pl-7 pr-7"
@@ -237,7 +253,7 @@ function OrgChartCanvas({
             {search && (
               <button
                 type="button"
-                onClick={() => setSearch("")}
+                onClick={() => onSearchChange("")}
                 aria-label={tc("clearFilters")}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 text-text-3 hover:text-text"
               >

@@ -45,15 +45,20 @@ export function MoveDialog({
   const [reason, setReason] = React.useState("");
   const [pending, startTransition] = React.useTransition();
 
+  // Fetching the dry run IS an external-system sync, so an effect is right
+  // here. The component is keyed on the move below, so there is no stale
+  // state to reset first.
   React.useEffect(() => {
     if (!open || !unitId) return;
-    setPreview(null);
-    setError(null);
-    setReason("");
+    let cancelled = false;
     void previewMoveAction(unitId, newParentId).then((result) => {
+      if (cancelled) return;
       if ("error" in result) setError(result.error ?? null);
       else setPreview(result);
     });
+    return () => {
+      cancelled = true;
+    };
   }, [open, unitId, newParentId]);
 
   const apply = () => {
@@ -79,7 +84,7 @@ export function MoveDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent width="lg">
+      <DialogContent width="lg" key={`${unitId ?? ""}->${newParentId ?? ""}`}>
         <DialogHeader title={t("moveUnit")} description={t("previewChanges")} />
 
         <DialogBody className="space-y-3">

@@ -14,6 +14,7 @@ import { Kbd } from "@/components/ui/misc";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Tooltip } from "@/components/ui/tooltip";
 import { PageHeader } from "@/components/app/page-header";
+import { useDebouncedSearch } from "@/lib/use-debounced-search";
 import { RosterGrid, selectionBounds, selectionSize, type Selection } from "./roster-grid";
 import { ConfirmDialog } from "./confirm-dialog";
 import {
@@ -51,14 +52,11 @@ export function RosterView({ data, orgSlug }: { data: RosterGridData; orgSlug: s
   const [selection, setSelection] = React.useState<Selection | null>(null);
   const [pending, startTransition] = React.useTransition();
   const [confirm, setConfirm] = React.useState<"generate" | "publish" | null>(null);
-  const [search, setSearch] = React.useState(params.q);
-
-  React.useEffect(() => setSearch(params.q), [params.q]);
-  React.useEffect(() => {
-    if (search === params.q) return;
-    const id = setTimeout(() => void setParams({ q: search }), 250);
-    return () => clearTimeout(id);
-  }, [search, params.q, setParams]);
+  const commitSearch = React.useCallback(
+    (q: string) => void setParams({ q }),
+    [setParams],
+  );
+  const [search, setSearch] = useDebouncedSearch(params.q, commitSearch);
 
   const isPublished = data.period.status === "published" || data.period.status === "archived";
   const editable = data.canEdit && !isPublished;

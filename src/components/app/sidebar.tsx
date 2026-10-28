@@ -11,8 +11,13 @@ import { useAbility } from "./ability-provider";
 import { canType } from "@/lib/authz/ability";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { useLocalPreference } from "@/lib/use-debounced-search";
 
 const COLLAPSE_KEY = "campos.sidebar.collapsed";
+
+function isFlag(value: string): value is "0" | "1" {
+  return value === "0" || value === "1";
+}
 
 export function Sidebar({
   orgSlug,
@@ -26,18 +31,9 @@ export function Sidebar({
   const t = useTranslations();
   const pathname = usePathname();
   const ability = useAbility();
-  const [collapsed, setCollapsed] = React.useState(false);
-
-  React.useEffect(() => {
-    setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === "1");
-  }, []);
-
-  const toggle = () => {
-    setCollapsed((c) => {
-      window.localStorage.setItem(COLLAPSE_KEY, c ? "0" : "1");
-      return !c;
-    });
-  };
+  const [flag, setFlag] = useLocalPreference<"0" | "1">(COLLAPSE_KEY, "0", isFlag);
+  const collapsed = flag === "1";
+  const toggle = () => setFlag(collapsed ? "0" : "1");
 
   // The nav tree is derived from permissions, so two roles genuinely see two
   // different products rather than the same one with dead links.

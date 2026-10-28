@@ -141,3 +141,36 @@ describe("employee detail", () => {
     expect(detail.orgUnitName).toBeTruthy();
   });
 });
+
+describe("dashboard reports unknown rather than zero", () => {
+  it("omits roster coverage when the actor cannot read org units", async () => {
+    const { getDashboard } = await import("../dashboard");
+    // A camp manager can read rosters but not org units, so the establishment
+    // behind "assigned / required" is not visible to them.
+    const camp = ctxFor(["camp.manager"], { campIds: ["camp_ot_main"] });
+    expect(getDashboard(camp).rosterCoverage).toBeNull();
+  });
+
+  it("computes coverage for a role that can see both", async () => {
+    const { getDashboard } = await import("../dashboard");
+    const coverage = getDashboard(ctxFor(["org.admin"])).rosterCoverage;
+    expect(coverage).not.toBeNull();
+    expect(coverage!.required).toBeGreaterThan(0);
+  });
+
+  it("omits bed figures entirely for a role with no bed permission", async () => {
+    const { getDashboard } = await import("../dashboard");
+    const hr = getDashboard(ctxFor(["hr.manager"]));
+    expect(hr.freeBeds).toBeNull();
+    expect(hr.inCamp).toBeNull();
+    // And no half-populated camp table, which reads as "the camps are empty".
+    expect(hr.occupancyByCamp).toEqual([]);
+  });
+
+  it("gives a camp manager bed figures for their camps only", async () => {
+    const { getDashboard } = await import("../dashboard");
+    const camp = getDashboard(ctxFor(["camp.manager"], { campIds: ["camp_ot_main"] }));
+    expect(camp.freeBeds).not.toBeNull();
+    expect(camp.occupancyByCamp.map((c) => c.campId)).toEqual(["camp_ot_main"]);
+  });
+});

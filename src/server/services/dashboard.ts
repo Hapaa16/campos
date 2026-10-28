@@ -129,7 +129,10 @@ export function getDashboard(ctx: DataContext): DashboardData {
 
   /* -- roster coverage --------------------------------------------------- */
   let rosterCoverage: DashboardData["rosterCoverage"] = null;
-  if (mayReadRoster) {
+  // Coverage needs the establishment, which lives on org units. Without that
+  // permission the ratio is unknowable — and "0 / 0" would read as a total
+  // staffing failure rather than as a figure this role cannot see.
+  if (mayReadRoster && canType(ability, "read", "OrgUnit")) {
     const period = query(ctx, "RosterPeriod", data.rosterPeriods)
       .where((p) => p.startDate <= todayStr && p.endDate >= todayStr)
       .first();

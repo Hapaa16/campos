@@ -37,10 +37,11 @@ export function UserMenu({
   const t = useTranslations();
   const pathname = usePathname();
   const locale = useLocale();
+  // `theme` is undefined until next-themes hydrates, which is exactly the
+  // "no selection yet" state the radio group should show — no mounted flag,
+  // and therefore no setState-in-effect, is needed.
   const { theme, setTheme } = useTheme();
   const { density, setDensity } = useDensity();
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
 
   const signOut = () => {
     void signOutAction();
@@ -78,7 +79,7 @@ export function UserMenu({
         <MenuSeparator />
 
         <MenuLabel>{t("theme.label")}</MenuLabel>
-        <MenuRadioGroup value={mounted ? theme : undefined} onValueChange={setTheme}>
+        <MenuRadioGroup value={theme} onValueChange={setTheme}>
           <MenuRadioItem value="dark">
             <Moon /> {t("theme.dark")}
           </MenuRadioItem>

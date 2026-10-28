@@ -30,8 +30,13 @@ export function usePageHeader(header: {
   actions?: React.ReactNode;
 }) {
   const { setHeader } = React.useContext(PageHeaderContext);
-  const serialized = React.useMemo(() => header, [header.title, header.meta, header.actions]);
-  React.useEffect(() => setHeader(serialized), [serialized, setHeader]);
+  const { title, meta, actions } = header;
+
+  // Depend on the three fields, not on the object: callers build a new object
+  // literal every render, so an object dependency would re-publish forever.
+  React.useEffect(() => {
+    setHeader({ title, meta, actions });
+  }, [title, meta, actions, setHeader]);
 }
 
 export function AppShell({

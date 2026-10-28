@@ -14,6 +14,7 @@ import {
   MenuTrigger,
 } from "@/components/ui/menu";
 import { cn } from "@/lib/utils";
+import { useDebouncedSearch } from "@/lib/use-debounced-search";
 
 export interface FacetOption {
   value: string;
@@ -47,15 +48,8 @@ export function FilterBar({
   hasFilters: boolean;
 }) {
   const t = useTranslations("common");
-  const [draft, setDraft] = React.useState(search);
-  React.useEffect(() => setDraft(search), [search]);
-
   // Debounced so typing does not fire a server round-trip per keystroke.
-  React.useEffect(() => {
-    if (draft === search) return;
-    const id = setTimeout(() => onSearchChange(draft), 250);
-    return () => clearTimeout(id);
-  }, [draft, search, onSearchChange]);
+  const [draft, setDraft] = useDebouncedSearch(search, onSearchChange);
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 border-b border-line px-3 py-2">

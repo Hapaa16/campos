@@ -41,7 +41,6 @@ export default async function EmployeeDetailPage({
   const t = await getTranslations("workforce");
   const tc = await getTranslations("common");
   const format = await getFormatter();
-  const today = new Date().toISOString().slice(0, 10);
 
   const field = (label: string, value: React.ReactNode) => (
     <div key={label} className="flex min-w-0 gap-3 py-1.5">
@@ -118,16 +117,13 @@ export default async function EmployeeDetailPage({
           <Panel>
             <PanelHeader
               title={t("qualifications")}
-              description={`${e.qualifications?.length ?? 0}`}
+              description={`${detail.qualifications.length}`}
             />
-            {e.qualifications && e.qualifications.length > 0 ? (
+            {detail.qualifications.length > 0 ? (
               <ul className="divide-y divide-line-soft">
-                {e.qualifications.map((q) => {
-                  const expired = q.expiresAt !== null && q.expiresAt < today;
-                  const soon =
-                    !expired &&
-                    q.expiresAt !== null &&
-                    q.expiresAt <= new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10);
+                {detail.qualifications.map((q) => {
+                  const expired = q.state === "expired";
+                  const soon = q.state === "expiring";
                   return (
                     <li key={q.code} className="flex items-center gap-3 px-4 py-2">
                       {expired ? (
